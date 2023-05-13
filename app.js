@@ -57,13 +57,13 @@ app.use((req, res, next) => {
 const User=require('./models/Users');
 
 
-app.use('/api/users', (req, res, next) => {   // pour avoir tous les Users
+app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes les Users
     User.find()
       .then(users => res.status(200).json(users))
       .catch(error => res.status(400).json({ error }));
   });
 
-  app.get('/api/findUser/:mail/:password', (req, res, next) => {
+  app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
     const { mail, password } = req.params;
   
     User.findOne({ mail })
@@ -77,47 +77,20 @@ app.use('/api/users', (req, res, next) => {   // pour avoir tous les Users
       .catch(error => res.status(500).json({ error }));
   });
 
-app.get('/api/users',(req,res , next )=>{
-const users =
-    [
-        {
-            
-            ine : '07IS8U00BS0',
-        
-            firstName : 'El Mellali',
-        
-            lastName : 'Yasser',
-        
-            mail : 'yasserelmellali11@gmail.com',
-        
-            status: 'teacher',
-        },
-        {
-    
-            ine : '07IS8U11BS0',
-        
-            firstName : 'Hassan',
-        
-            lastName : 'Issa',
-        
-            mail : 'HassanIssa@gmail.com',
-        
-            status: 'student',
-        }
-    ];
-    User.insertMany(users)
-    users.save()
-    .then(result => {
-      console.log(result);
-      res.status(201).json({ message: 'Users added successfully' });
-    })
-    .catch(error => {
-      console.log(error);
-      res.status(500).json({ error });
-    });
+app.put('/api/modifieUserPassword', (req, res, next) => {
+  User.updateOne({ mail: req.body.mail , password: req.body.password }, { password: req.body.password1 })
+    .then(() => res.status(200).json({ message: 'Users password modifié !'}))
+    .catch(error => res.status(400).json({ error }));
+
 });
 
-app.post('/api/addUser', (req, res, next) => {
+app.delete('/api/deleteUser/:mail', (req, res, next) => {
+  User.deleteOne({ mail: req.params.mail })
+    .then(() => res.status(200).json({ message: 'User supprimé !'}))
+    .catch(error => res.status(400).json({ error }));
+});
+
+app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un User
     const user = new User({
       ine: req.body.ine,
       firstName: req.body.firstName,
@@ -131,32 +104,6 @@ app.post('/api/addUser', (req, res, next) => {
     user.save()
       .then(() => res.status(201).json({ message: 'User enregistré !'}))
       .catch(error => res.status(400).json({ error }));
-    
-
- /*     const user = new User({
-    ine: '07IS8U00BS0',
-    firstName: 'El Mellali',
-    lastName: 'Yasser',
-    mail: 'yasserelmellali11@gmail.com',
-    status: 'teacher',
-    password: 'ciao'
-});
-
-user.save()
-    .then(result => {
-        console.log(result);
-        res.status(201).json({
-            message: 'User created successfully',
-            user: result
-        });
-    })
-    .catch(error => {
-        console.log(error);
-        res.status(500).json({
-            error: error
-        });
-    });
-*/
   });
 
 
