@@ -83,22 +83,37 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       .catch(error => res.status(400).json({ error }));
   });
 
-  app.post('/api/addUniversity', (req, res, next) => {  // requete post pour ajouter un User
+  app.post('/api/addUni', (req, res, next) => {  // requete post pour ajouter un User
     const university = new University({
-      name: req.body.name
+      name: req.body.name,
+      suffixe: req.body.suffixe,
+      path: req.body.path
     });
     university.save()
-      .then(() => res.status(201).json({ message: 'University enregistré !'}))
+      .then(() => res.status(201).json({ Item : [ {statut : true} ]}))
       .catch(error => res.status(400).json({ error }));
   });
 
-  app.use('/api/allUniversity',(req, res, next) => {   // pour avoir la liste des toutes les Universities
+  app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes les Universities
     University.find()
-      .then(universities => res.status(200).json(universities))
+      .then(universities => res.status(200).json({Item : [ universities ] }))
       .catch(error => res.status(400).json({ error }));
   });
   
-
+  app.put('/api/addUniPath/:name', (req, res, next) => {
+    University.findOneAndUpdate(
+      { name : req.params.name }, // Search for the document by its name field
+      { $push: { paths: { name: req.body.pathName } } }, // Add the new path to the paths array
+      { new: true } // Return the updated document instead of the original document
+  )
+  .then(updatedUniversity => {
+      console.log(updatedUniversity);
+  })
+  .catch(error => {
+      console.log(error);
+  });
+  });
+  
 
 
 module.exports = app;

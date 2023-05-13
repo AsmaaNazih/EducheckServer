@@ -4,7 +4,19 @@ const UniversitySchema = mongoose.Schema({
     name: {
         type: String,
         requried: false
-    }
+    },
+
+    suffixe: {
+        type: String,
+        required: true
+    },
+
+    paths: [{
+        name: {
+            type: String,
+            required: false
+        }}
+        ]
 
 });
 
