@@ -40,4 +40,7 @@ const usersSchema = mongoose.Schema({
 
 });
 
+
+
+
 module.exports = mongoose.model('User', usersSchema); // on ajoute cette Schema dnas la base de donnee

@@ -4,9 +4,6 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-
-const axios = require('axios');
-
 mongoose.connect('mongodb+srv://yasserelmellali11:Educheck@cluster0.k8blwbm.mongodb.net/?retryWrites=true&w=majority',
   { useNewUrlParser: true,
     useUnifiedTopology: true })
@@ -23,27 +20,6 @@ var data = JSON.stringify({
       }
 });
               
-var config = {
-    method: 'post',
-    url: 'https://eu-west-2.aws.data.mongodb-api.com/app/data-qsbjf/endpoint/data/v1',
-    headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Request-Headers': '*',
-        'api-key': '645e64b73f6e0e323d98b690',
-        'Accept': 'application/ejson'
-    },
-    data: data
-};
-              
-axios(config)
-    .then(function (response) {
-        console.log(JSON.stringify(response.data));
-    })
-    .catch(function (error) {
-        console.log(error);
-    });
-  
-
 app.use(express.json());
 
 
@@ -55,6 +31,7 @@ app.use((req, res, next) => {
 });
 
 const User=require('./models/Users');
+const University = require('./models/University');
 
 
 app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes les Users
@@ -65,17 +42,17 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
 
   app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
     const { mail, password } = req.params;
-  
+    console.log("service : findUser(mail,password)")
     User.findOne({ mail })
       .then(user => {
         if (!user) {
-          return res.status(404).json({ message: 'User not found' });
+          return res.status(404).json({items : [{ status : false }]});
         }
         
-        res.status(200).json(user);
+        res.status(200).json({items : [{ status : true }]});
       })
       .catch(error => res.status(500).json({ error }));
-  });
+  }); 
 
 app.put('/api/modifieUserPassword', (req, res, next) => {
   User.updateOne({ mail: req.body.mail , password: req.body.password }, { password: req.body.password1 })
@@ -105,6 +82,22 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       .then(() => res.status(201).json({ message: 'User enregistré !'}))
       .catch(error => res.status(400).json({ error }));
   });
+
+  app.post('/api/addUniversity', (req, res, next) => {  // requete post pour ajouter un User
+    const university = new University({
+      name: req.body.name
+    });
+    university.save()
+      .then(() => res.status(201).json({ message: 'University enregistré !'}))
+      .catch(error => res.status(400).json({ error }));
+  });
+
+  app.use('/api/allUniversity',(req, res, next) => {   // pour avoir la liste des toutes les Universities
+    University.find()
+      .then(universities => res.status(200).json(universities))
+      .catch(error => res.status(400).json({ error }));
+  });
+  
 
 
 
