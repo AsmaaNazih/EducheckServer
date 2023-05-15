@@ -36,6 +36,7 @@ const usersSchema = mongoose.Schema({
     token: {
         type: String,
         required: false
+        
     }
 
 });

@@ -121,6 +121,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       .then(uni => {
         if (!uni) {
           return res.status(404).json({items : [{ status : false }]});
+
         }
         
         res.status(200).json({items : uni.paths});
