@@ -107,6 +107,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       { new: true } // Return the updated document instead of the original document
   )
   .then(updatedUniversity => {
+
       console.log(updatedUniversity);
   })
   .catch(error => {
