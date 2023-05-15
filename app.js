@@ -96,7 +96,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
   app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes les Universities
     University.find()
-      .then(universities => res.status(200).json({Item : [ universities ] }))
+      .then(universities => res.status(200).json({Item :  universities  }))
       .catch(error => res.status(400).json({ error }));
   });
   
@@ -115,6 +115,19 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       .then(() => res.status(200).json({ Item: [ {message : 'University supprimé !'} ] }))
       .catch(error => res.status(400).json({ error }));
   });
+
+  app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on cherche un user par ça mail et son password
+    University.findOne({ suffixe: req.params.suffixe })
+      .then(uni => {
+        if (!uni) {
+          return res.status(404).json({items : [{ status : false }]});
+        }
+        
+        res.status(200).json({items : uni.paths});
+      })
+      .catch(error => res.status(500).json({ error }));
+  }); 
+
 
 module.exports = app;
 
