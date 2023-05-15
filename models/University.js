@@ -16,7 +16,6 @@ const UniversitySchema = mongoose.Schema({
         name: {
             type: String,
             required: false
-
         }}
         ]
 

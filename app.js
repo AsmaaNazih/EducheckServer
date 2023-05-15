@@ -56,14 +56,14 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
 
 app.put('/api/modifieUserPassword', (req, res, next) => {
   User.updateOne({ mail: req.body.mail , password: req.body.password }, { password: req.body.password1 })
-    .then(() => res.status(200).json({ message: 'Users password modifié !'}))
+    .then(() => res.status(200).json({ Item: [ {message : 'User password modfie !'} ] }))
     .catch(error => res.status(400).json({ error }));
 
 });
 
 app.delete('/api/deleteUser/:mail', (req, res, next) => {
   User.deleteOne({ mail: req.params.mail })
-    .then(() => res.status(200).json({ message: 'User supprimé !'}))
+    .then(() => res.status(200).json({ Item: [ {message : 'User supprimé !'} ] }))
     .catch(error => res.status(400).json({ error }));
 });
 
@@ -79,7 +79,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
     });
     user.save()
-      .then(() => res.status(201).json({ message: 'User enregistré !'}))
+      .then(() => res.status(201).json({ Item: [ {message : 'User enregistre !'} ] }))
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -106,13 +106,13 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       { $push: { paths: { name: req.body.pathName } } }, // Add the new path to the paths array
       { new: true } // Return the updated document instead of the original document
   )
-  .then(() => res.status(200).json({ message: 'path ajouté !'}))
+  .then(() => res.status(200).json({ Item: [ {message : 'path ajoute !'} ] }))
   .catch(error => res.status(400).json({ error }));
   });
   
   app.delete('/api/deleteUni/:id', (req, res, next) => {
     University.deleteOne({ _id:req.params.id })
-      .then(() => res.status(200).json({ message: 'University supprimé !'}))
+      .then(() => res.status(200).json({ Item: [ {message : 'University supprimé !'} ] }))
       .catch(error => res.status(400).json({ error }));
   });
 
