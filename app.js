@@ -36,7 +36,7 @@ const University = require('./models/University');
 
 app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes les Users
     User.find()
-      .then(users => res.status(200).json(users))
+      .then(users => res.status(200).json({Item : [  users ]}))
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -100,22 +100,21 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       .catch(error => res.status(400).json({ error }));
   });
   
-  app.put('/api/addUniPath/:name', (req, res, next) => {
+  app.put('/api/addUniPath/:id', (req, res, next) => {
     University.findOneAndUpdate(
-      { name : req.params.name }, // Search for the document by its name field
+      { _id : req.params.id }, // Search for the document by its name field
       { $push: { paths: { name: req.body.pathName } } }, // Add the new path to the paths array
       { new: true } // Return the updated document instead of the original document
   )
-  .then(updatedUniversity => {
-
-      console.log(updatedUniversity);
-  })
-  .catch(error => {
-      console.log(error);
-  });
+  .then(() => res.status(200).json({ message: 'path ajouté !'}))
+  .catch(error => res.status(400).json({ error }));
   });
   
-
+  app.delete('/api/deleteUni/:id', (req, res, next) => {
+    University.deleteOne({ _id:req.params.id })
+      .then(() => res.status(200).json({ message: 'University supprimé !'}))
+      .catch(error => res.status(400).json({ error }));
+  });
 
 module.exports = app;
 

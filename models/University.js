@@ -12,7 +12,7 @@ const UniversitySchema = mongoose.Schema({
     },
 
     paths: [{
-        id:false,
+        _id:false,
         name: {
             type: String,
             required: false
