@@ -4,9 +4,7 @@ const usersSchema = mongoose.Schema({
 
     ine : { 
         type:String, 
-        required: true, 
-        maxlength: 11 , 
-        minlength: 11
+        required: true
      },
 
     firstName : {
@@ -37,6 +35,12 @@ const usersSchema = mongoose.Schema({
         type: String,
         required: false
         
+    },
+
+    valide: {
+        type: String,
+        enum: ['true','false'],
+        required:true
     }
 
 });

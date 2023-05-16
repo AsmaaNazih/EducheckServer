@@ -3,20 +3,36 @@ const mongoose= require('mongoose');
 const UniversitySchema = mongoose.Schema({
     name: {
         type: String,
-        requried: false
+        required: false
     },
 
-    suffixe: {
+    suffixe_student: {
+        type: String,
+        required: true
+    },
+    suffixe_teacher: {
         type: String,
         required: true
     },
 
     paths: [{
         _id:false,
+        type: {
+            type: String,
+            required: false
+        },
+
         name: {
             type: String,
             required: false
-        }}
+        },
+        referant: {
+            type: String ,
+            required: false
+        }
+
+    
+    }
         ]
 
 });

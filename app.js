@@ -25,6 +25,26 @@ const User=require('./models/Users');
 const University = require('./models/University');
 
 
+
+//############################################### Fonctions ###################################################################
+function generateRandomString(x) {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-@/!;,:°#*%$£%&/()=?';
+  let randomString = '';
+
+  for (let i = 0; i < x; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    randomString += characters.charAt(randomIndex);
+  }
+
+  return randomString;
+}
+
+
+
+
+
+
+
 app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes les Users
     User.find()
       .then(users => res.status(200).json({items : [  users ]}))
@@ -40,7 +60,7 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
           return res.status(404).json({items : [{ status : false }]});
         }
         
-        res.status(200).json({items : [{ status : true }]});
+        res.status(200).json({items : [{ status : true, valide: JSON.parse(user.valide) }]});
       })
       .catch(error => res.status(500).json({ error }));
   }); 
@@ -59,13 +79,19 @@ app.delete('/api/deleteUser/:mail', (req, res, next) => {
 });
 
 app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un User
+  if(req.body.status=='student'){
+    valid = false
+  }else{
+    valid = true
+  }
     const user = new User({
       ine: req.body.ine,
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       status: req.body.status,  
-      password:"",
+      password: generateRandomString(8),
       mail: req.body.mail,
+      valide: valid
 
 
     });
@@ -77,7 +103,8 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
   app.post('/api/addUni', (req, res, next) => {  // requete post pour ajouter un User
     const university = new University({
       name: req.body.name,
-      suffixe: req.body.suffixe,
+      suffixe_student: req.body.suffixe_student,
+      suffixe_teacher: req.body.suffixe_teacher,
       path: req.body.path
     });
     university.save()
@@ -94,7 +121,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
   app.put('/api/addUniPath/:id', (req, res, next) => {
     University.findOneAndUpdate(
       { _id : req.params.id }, // Search for the document by its name field
-      { $push: { paths: { name: req.body.pathName } } }, // Add the new path to the paths array
+      { $push: { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } }, // Add the new path to the paths array
       { new: true } // Return the updated document instead of the original document
   )
   .then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
@@ -104,7 +131,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
   app.delete('/api/deleteUni/:id', (req, res, next) => {
     University.deleteOne({ _id:req.params.id })
       .then(() => res.status(200).json({ items: [ {message : 'University supprimé !'} ] }))
-      .catch(error => res.status(400).json({ error }));
+n       .catch(error => res.status(400).json({ error }));
   });
 
   app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on cherche un user par ça mail et son password
