@@ -10,15 +10,6 @@ mongoose.connect('mongodb+srv://yasserelmellali11:Educheck@cluster0.k8blwbm.mong
   .then(() => console.log('Connexion à MongoDB réussie !'))
   .catch(() => console.log('Connexion à MongoDB échouée !'));
 
-
-var data = JSON.stringify({
-      "collection": "users",
-      "database": "test",
-      "dataSource": "Cluster0",
-      "projection": {
-          "_id": 1
-      }
-});
               
 app.use(express.json());
 
