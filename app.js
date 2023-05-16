@@ -27,7 +27,7 @@ const University = require('./models/University');
 
 app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes les Users
     User.find()
-      .then(users => res.status(200).json({Item : [  users ]}))
+      .then(users => res.status(200).json({items : [  users ]}))
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -47,14 +47,14 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
 
 app.put('/api/modifieUserPassword', (req, res, next) => {
   User.updateOne({ mail: req.body.mail , password: req.body.password }, { password: req.body.password1 })
-    .then(() => res.status(200).json({ Item: [ {message : 'User password modfie !'} ] }))
+    .then(() => res.status(200).json({ items: [ {message : 'User password modfie !'} ] }))
     .catch(error => res.status(400).json({ error }));
 
 });
 
 app.delete('/api/deleteUser/:mail', (req, res, next) => {
   User.deleteOne({ mail: req.params.mail })
-    .then(() => res.status(200).json({ Item: [ {message : 'User supprimé !'} ] }))
+    .then(() => res.status(200).json({ items: [ {message : 'User supprimé !'} ] }))
     .catch(error => res.status(400).json({ error }));
 });
 
@@ -70,7 +70,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
     });
     user.save()
-      .then(() => res.status(201).json({ Item: [ {message : 'User enregistre !'} ] }))
+      .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] }))
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -81,13 +81,13 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       path: req.body.path
     });
     university.save()
-      .then(() => res.status(201).json({ Item : [ {statut : true} ]}))
+      .then(() => res.status(201).json({ items : [ {statut : true} ]}))
       .catch(error => res.status(400).json({ error }));
   });
 
   app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes les Universities
     University.find()
-      .then(universities => res.status(200).json({Item :  universities  }))
+      .then(universities => res.status(200).json({items :  universities  }))
       .catch(error => res.status(400).json({ error }));
   });
   
@@ -97,13 +97,13 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       { $push: { paths: { name: req.body.pathName } } }, // Add the new path to the paths array
       { new: true } // Return the updated document instead of the original document
   )
-  .then(() => res.status(200).json({ Item: [ {message : 'path ajoute !'} ] }))
+  .then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
   .catch(error => res.status(400).json({ error }));
   });
   
   app.delete('/api/deleteUni/:id', (req, res, next) => {
     University.deleteOne({ _id:req.params.id })
-      .then(() => res.status(200).json({ Item: [ {message : 'University supprimé !'} ] }))
+      .then(() => res.status(200).json({ items: [ {message : 'University supprimé !'} ] }))
       .catch(error => res.status(400).json({ error }));
   });
 
