@@ -2,6 +2,8 @@ const express = require('express');
 
 const mongoose = require('mongoose');
 
+const nodemailer = require('nodemailer');
+
 const app = express();
 
 mongoose.connect('mongodb+srv://yasserelmellali11:Educheck@cluster0.k8blwbm.mongodb.net/?retryWrites=true&w=majority',
@@ -26,7 +28,7 @@ const University = require('./models/University');
 
 
 
-//############################################### Fonctions ###################################################################
+//################################################### Fonctions ###################################################################
 function generateRandomString(x) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-@/!;,:°#*%$£%&/()=?';
   let randomString = '';
@@ -38,6 +40,35 @@ function generateRandomString(x) {
 
   return randomString;
 }
+async function sendPasswordEmail(email, password) {
+  // Create a transporter object using your email service details
+  let transporter = nodemailer.createTransport({
+    host: 'smtp.free.fr',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: 'pierreedouardhermenier@free.fr',
+      pass: 'gmailintranet35'
+    }
+  });
+
+  // Define the email options
+  let mailOptions = {
+    from: 'pierreedouardhermenier@free.fr',
+    to: email,
+    subject: 'Password Reset',
+    text: 'Your new password is: ' + password
+  };
+
+  try {
+    // Send the email
+    let info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.response);
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+}
+
 
 
 
@@ -147,6 +178,16 @@ n       .catch(error => res.status(400).json({ error }));
       .catch(error => res.status(500).json({ error }));
   }); 
 
+app.get('/api/resetPassword/:mail',(req,res, next) => {
+User.findOne({ mail: req.params.mail})
+  .then(user =>{
+    if(!user) {
+      return res.status(404).json({items: [{ status: false }]});
+    }
+    sendPasswordEmail(user.mail,user.password);
+    res.status(200).json({items : [ {status: true} ]})
+  })
 
+});
 module.exports = app;
 
