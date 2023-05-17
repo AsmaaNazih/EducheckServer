@@ -23,6 +23,34 @@ app.use((req, res, next) => {
   next();
 });
 
+/**
+ * const express = require('express');
+ * const mongodb = require('mongodb');
+ * const nodemailer = require('nodemailer');
+ * const app = express();
+ * const MongoClient = mongodb.MongoClient;
+ * const uri = 'mongodb+srv://yasserelmellali11:Educheck@cluster0.k8blwbm.mongodb.net/mydatabase?retryWrites=true&w=majority';
+ *
+ * MongoClient.connect(uri, {
+ *   useNewUrlParser: true,
+ *   useUnifiedTopology: true
+ * }, (err, client) => {
+ *   if (err) {
+ *     console.log('Connexion à MongoDB échouée !', err);
+ *   } else {
+ *     console.log('Connexion à MongoDB réussie !');
+ *     const db = client.db('mydatabase');
+ *
+ *     // Continue with your database operations here using the db variable
+ *
+ *     client.close();
+ *   }
+ * });
+ *
+ * app.use(express.json());
+ * @type {unknown}
+ */
+
 const User=require('./models/Users');
 const University = require('./models/University');
 
@@ -162,7 +190,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
   app.delete('/api/deleteUni/:id', (req, res, next) => {
     University.deleteOne({ _id:req.params.id })
       .then(() => res.status(200).json({ items: [ {message : 'University supprimé !'} ] }))
-n       .catch(error => res.status(400).json({ error }));
+        .catch(error => res.status(400).json({ error }));
   });
 
   app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on cherche un user par ça mail et son password
