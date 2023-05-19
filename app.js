@@ -194,13 +194,13 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
   });
 
   app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on cherche un user par ça mail et son password
-    University.findOne({ suffixe: req.params.suffixe })
+    University.findOne({ suffixe_teacher: req.params.suffixe })
       .then(uni => {
         if (!uni) {
           return res.status(404).json({items : [{ status : false }]});
 
         }
-        
+        console.log(uni.paths)
         res.status(200).json({items : uni.paths});
       })
       .catch(error => res.status(500).json({ error }));

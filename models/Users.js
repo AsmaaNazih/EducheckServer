@@ -27,7 +27,7 @@ const usersSchema = mongoose.Schema({
     },  
     status: {
         type: String,
-        enum: ['teacher', 'admin', 'student'], // Add enum property
+        enum: ['Teacher', 'Admin', 'Student'], // Add enum property
         required: true
       },
 
