@@ -23,33 +23,6 @@ app.use((req, res, next) => {
   next();
 });
 
-/**
- * const express = require('express');
- * const mongodb = require('mongodb');
- * const nodemailer = require('nodemailer');
- * const app = express();
- * const MongoClient = mongodb.MongoClient;
- * const uri = 'mongodb+srv://yasserelmellali11:Educheck@cluster0.k8blwbm.mongodb.net/mydatabase?retryWrites=true&w=majority';
- *
- * MongoClient.connect(uri, {
- *   useNewUrlParser: true,
- *   useUnifiedTopology: true
- * }, (err, client) => {
- *   if (err) {
- *     console.log('Connexion à MongoDB échouée !', err);
- *   } else {
- *     console.log('Connexion à MongoDB réussie !');
- *     const db = client.db('mydatabase');
- *
- *     // Continue with your database operations here using the db variable
- *
- *     client.close();
- *   }
- * });
- *
- * app.use(express.json());
- * @type {unknown}
- */
 
 const User=require('./models/Users');
 const University = require('./models/University');
@@ -68,7 +41,7 @@ function generateRandomString(x) {
 
   return randomString;
 }
-async function sendPasswordEmail(email, password) {
+async function sendEmail(email, password, type) {
   // Create a transporter object using your email service details
   let transporter = nodemailer.createTransport({
     host: 'smtp.free.fr',
@@ -79,13 +52,21 @@ async function sendPasswordEmail(email, password) {
       pass: 'gmailintranet35'
     }
   });
-
+  let subject;
+  let text;
+  if(type === 'validToken'){
+    subject='Validate your account'
+    text= 'you have to go to this url : http:\\localhost/api/sendToken/'+password
+  }else if(type==='first_password'){
+    subject='Your Password'
+    text= 'you can connect with the following password '+ password
+  }
   // Define the email options
   let mailOptions = {
     from: 'pierreedouardhermenier@free.fr',
     to: email,
-    subject: 'Password Reset',
-    text: 'Your new password is: ' + password
+    subject: subject,
+    text: text
   };
 
   try {
@@ -138,11 +119,8 @@ app.delete('/api/deleteUser/:mail', (req, res, next) => {
 });
 
 app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un User
-  if(req.body.status=='student'){
-    valid = false
-  }else{
-    valid = true
-  }
+  let valid;
+  valid = req.body.status !== 'student';
     const user = new User({
       ine: req.body.ine,
       firstName: req.body.firstName,
@@ -150,6 +128,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       status: req.body.status,  
       password: generateRandomString(8),
       mail: req.body.mail,
+      token: generateRandomString(20),
       valide: valid
 
 
@@ -164,10 +143,11 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       name: req.body.name,
       suffixe_student: req.body.suffixe_student,
       suffixe_teacher: req.body.suffixe_teacher,
-      path: req.body.path
+      path: req.body.path,
+      image: req.body.image
     });
     university.save()
-      .then(() => res.status(201).json({ items : [ {statut : true} ]}))
+      .then(uni => res.status(201).json({ items :  uni }))
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -204,7 +184,26 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
         res.status(200).json({items : uni.paths});
       })
       .catch(error => res.status(500).json({ error }));
-  }); 
+  });
+
+
+app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
+  User.findOneAndUpdate(
+      {  mail: req.body.mail },
+      { $push: { uniName: req.body.uniName, path: { type: req.body.path.type ,name: req.body.path.name } } }, // Add the new path to the paths array
+       { new: true } // Return the updated document instead of the original document
+  )
+      .then(user => {
+
+        if (!user) {
+          return res.status(404).json({items : [{ error : "USER_NOT_FOUND" }]});
+
+        }
+
+        res.status(200).json({items : user});
+      })
+      .catch(error => res.status(500).json({ error }));
+});
 
 app.get('/api/resetPassword/:mail',(req,res, next) => {
 User.findOne({ mail: req.params.mail})
@@ -212,10 +211,37 @@ User.findOne({ mail: req.params.mail})
     if(!user) {
       return res.status(404).json({items: [{ status: false }]});
     }
-    sendPasswordEmail(user.mail,user.password);
+    sendEmail(user.mail,user.password,'first_password');
     res.status(200).json({items : [ {status: true} ]})
   })
 
 });
+
+app.get('/api/sendValidToken/:mail',(req,res,next) => {
+  User.findOne( { mail: req.params.mail})
+      .then(user =>{
+        if(!user){
+          return res.status(404).json({items: [{ status: false }]});
+        }
+        sendEmail(user.mail,user.token,'validToken')
+        return res.status(200).json( {items: [ {status: true}]})
+
+      })
+
+});
+app.get('/api/sendToken',(req,res,next) => {
+  User.findOneAndUpdate( { token: req.params.token},
+  { $push: { valide : true  } }, // Add the new path to the paths array
+  { new: true }) // Return the updated document instead of the original document)
+      .then(user =>{
+        if(!user){
+          return res.status(404).json({items: [{ status: false }]});
+        }
+
+        return res.status(200).json( {items: [ {status: true}]})
+
+      })
+
+})
 module.exports = app;
 

@@ -1,4 +1,5 @@
 const mongoose= require('mongoose');
+const {Binary} = require("mongodb");
 
 const UniversitySchema = mongoose.Schema({
     name: {
@@ -33,7 +34,12 @@ const UniversitySchema = mongoose.Schema({
 
     
     }
-        ]
+        ],
+
+    image: {
+        type: Buffer ,
+        required: false
+    }
 
 });
 

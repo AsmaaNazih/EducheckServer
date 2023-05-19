@@ -41,6 +41,26 @@ const usersSchema = mongoose.Schema({
         type: String,
         enum: ['true','false'],
         required:true
+    },
+
+    path: {
+        _id:false,
+        type: {
+            type: String,
+            required: false
+        },
+
+        name: {
+            type: String,
+            required: false
+        }
+
+
+    },
+
+    uniName: {
+        type:String,
+        required: false
     }
 
 });
