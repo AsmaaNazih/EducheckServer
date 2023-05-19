@@ -31,7 +31,7 @@ const University = require('./models/University');
 
 //################################################### Fonctions ###################################################################
 function generateRandomString(x) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-@!;,:°#*%$£%&/()=?';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-@/!;,:°#*%$£%&/()=?';
   let randomString = '';
 
   for (let i = 0; i < x; i++) {
@@ -56,7 +56,7 @@ async function sendEmail(email, password, type) {
   let text;
   if(type === 'validToken'){
     subject='Validate your account'
-    text= 'you have to go to this url : http://localhost:3000/api/sendToken/'+password
+    text= 'you have to go to this url : http:\\localhost/api/sendToken/'+password
   }else if(type==='first_password'){
     subject='Your Password'
     text= 'you can connect with the following password '+ password
@@ -120,7 +120,7 @@ app.delete('/api/deleteUser/:mail', (req, res, next) => {
 
 app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un User
   let valid;
-  valid = req.body.status !== 'Student';
+  valid = req.body.status !== 'student';
     const user = new User({
       ine: req.body.ine,
       firstName: req.body.firstName,
@@ -237,7 +237,7 @@ app.get('/api/sendToken',(req,res,next) => {
         if(!user){
           return res.status(404).json({items: [{ status: false }]});
         }
-        sendEmail(user.mail,user.password,'first_password');
+
         return res.status(200).json( {items: [ {status: true}]})
 
       })
