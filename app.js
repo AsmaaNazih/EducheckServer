@@ -180,7 +180,6 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
           return res.status(404).json({items : [{ status : false }]});
 
         }
-        console.log(uni.paths)
         res.status(200).json({items : uni.paths});
       })
       .catch(error => res.status(500).json({ error }));
@@ -188,19 +187,23 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
 
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
+  console.log(req.body.name)
+  console.log(req.body.uniName)
+  console.log(req.body.type)
   User.findOneAndUpdate(
       {  mail: req.body.mail },
-      { $push: { uniName: req.body.uniName, path: { type: req.body.path.type ,name: req.body.path.name } } }, // Add the new path to the paths array
+      { $push: { uniName: req.body.uniName, path: { type: req.body.type ,name: req.body.name } } }, // Add the new path to the paths array
        { new: true } // Return the updated document instead of the original document
   )
       .then(user => {
 
         if (!user) {
+          console.log("user_not_found")
           return res.status(404).json({items : [{ error : "USER_NOT_FOUND" }]});
 
         }
 
-        res.status(200).json({items : user});
+        res.status(200).json({items : [{ status : true}]});
       })
       .catch(error => res.status(500).json({ error }));
 });
