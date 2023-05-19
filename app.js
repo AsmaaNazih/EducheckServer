@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 
-mongoose.connect('mongodb+srv://yasserelmellali11:Educheck@cluster0.k8blwbm.mongodb.net/?retryWrites=true&w=majority',
+mongoose.connect('mongodb+srv://yass:Educheck@cluster0.k8blwbm.mongodb.net/?retryWrites=true&w=majority',
   { useNewUrlParser: true,
     useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB réussie !'))
@@ -31,7 +31,7 @@ const University = require('./models/University');
 
 //################################################### Fonctions ###################################################################
 function generateRandomString(x) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-@!;,:°#*%$£%&/()=?';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
 
   for (let i = 0; i < x; i++) {
@@ -134,7 +134,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
     });
     user.save()
-      .then(() => sendEmail(user.mail,user.password,'first_password'), res.status(201).json({ items: [ {message : 'User enregistre !'} ] }))
+      .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] })) , sendEmail(user.mail,user.password,'first_password')
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -232,16 +232,17 @@ app.get('/api/sendValidToken/:mail',(req,res,next) => {
       })
 
 });
-app.get('/api/sendToken',(req,res,next) => {
-  User.findOneAndUpdate( { token: req.params.token},
-  { $push: { valide : true  } }, // Add the new path to the paths array
+app.get('/api/sendToken/:token',(req,res,next) => {
+    console.log(req.body.token);
+    User.findOneAndUpdate( { token: req.params.token},
+  { $set: { valide : 'true'  } }, // Add the new path to the paths array
   { new: true }) // Return the updated document instead of the original document)
       .then(user =>{
         if(!user){
           return res.status(404).json({items: [{ status: false }]});
         }
-        
-        return res.status(200).json( {items: [ {status: true}]})
+
+        return res.status(200).json( {items: [ {status: 'Your account now is valid!'}]})
 
       })
 
