@@ -120,7 +120,7 @@ app.delete('/api/deleteUser/:mail', (req, res, next) => {
 
 app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un User
   let valid;
-  valid = req.body.status !== 'student';
+  valid = req.body.status !== 'Student';
     const user = new User({
       ine: req.body.ine,
       firstName: req.body.firstName,
