@@ -31,7 +31,7 @@ const University = require('./models/University');
 
 //################################################### Fonctions ###################################################################
 function generateRandomString(x) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-@/!;,:°#*%$£%&/()=?';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-@!;,:°#*%$£%&/()=?';
   let randomString = '';
 
   for (let i = 0; i < x; i++) {
@@ -56,7 +56,7 @@ async function sendEmail(email, password, type) {
   let text;
   if(type === 'validToken'){
     subject='Validate your account'
-    text= 'you have to go to this url : http:\\localhost/api/sendToken/'+password
+    text= 'you have to go to this url : http://localhost:3000/api/sendToken/'+password
   }else if(type==='first_password'){
     subject='Your Password'
     text= 'you can connect with the following password '+ password
@@ -120,7 +120,7 @@ app.delete('/api/deleteUser/:mail', (req, res, next) => {
 
 app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un User
   let valid;
-  valid = req.body.status !== 'student';
+  valid = req.body.status !== 'Student';
     const user = new User({
       ine: req.body.ine,
       firstName: req.body.firstName,
@@ -134,7 +134,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
     });
     user.save()
-      .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] }))
+      .then(() => sendEmail(user.mail,user.password,'first_password'), res.status(201).json({ items: [ {message : 'User enregistre !'} ] }))
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -180,7 +180,6 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
           return res.status(404).json({items : [{ status : false }]});
 
         }
-        console.log(uni.paths)
         res.status(200).json({items : uni.paths});
       })
       .catch(error => res.status(500).json({ error }));
@@ -188,19 +187,23 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
 
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
+  console.log(req.body.name)
+  console.log(req.body.uniName)
+  console.log(req.body.type)
   User.findOneAndUpdate(
       {  mail: req.body.mail },
-      { $push: { uniName: req.body.uniName, path: { type: req.body.path.type ,name: req.body.path.name } } }, // Add the new path to the paths array
+      { $push: { uniName: req.body.uniName, path: { type: req.body.type ,name: req.body.name } } }, // Add the new path to the paths array
        { new: true } // Return the updated document instead of the original document
   )
       .then(user => {
 
         if (!user) {
+          console.log("user_not_found")
           return res.status(404).json({items : [{ error : "USER_NOT_FOUND" }]});
 
         }
 
-        res.status(200).json({items : user});
+        res.status(200).json({items : [{ status : true}]});
       })
       .catch(error => res.status(500).json({ error }));
 });
@@ -237,7 +240,7 @@ app.get('/api/sendToken',(req,res,next) => {
         if(!user){
           return res.status(404).json({items: [{ status: false }]});
         }
-
+        
         return res.status(200).json( {items: [ {status: true}]})
 
       })
