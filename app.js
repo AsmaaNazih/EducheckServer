@@ -134,7 +134,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
     });
     user.save()
-      .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] }))
+      .then(() => sendEmail(user.mail,user.password,'first_password'), res.status(201).json({ items: [ {message : 'User enregistre !'} ] }))
       .catch(error => res.status(400).json({ error }));
   });
 
@@ -240,7 +240,7 @@ app.get('/api/sendToken',(req,res,next) => {
         if(!user){
           return res.status(404).json({items: [{ status: false }]});
         }
-        sendEmail(user.mail,user.password,'first_password');
+        
         return res.status(200).json( {items: [ {status: true}]})
 
       })
