@@ -232,15 +232,15 @@ app.get('/api/sendValidToken/:mail',(req,res,next) => {
       })
 
 });
-app.get('/api/sendToken',(req,res,next) => {
+app.put('/api/sendToken/:token',(req,res,next) => {
   User.findOneAndUpdate( { token: req.params.token},
-  { $push: { valide : true  } }, // Add the new path to the paths array
-  { new: true }) // Return the updated document instead of the original document)
+  { $set: { valide : true  } }, 
+  { new: true }) 
       .then(user =>{
         if(!user){
           return res.status(404).json({items: [{ status: false }]});
         }
-        
+
         return res.status(200).json( {items: [ {status: true}]})
 
       })
