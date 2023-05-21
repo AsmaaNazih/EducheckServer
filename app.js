@@ -26,6 +26,7 @@ app.use((req, res, next) => {
 
 const User=require('./models/Users');
 const University = require('./models/University');
+const Message = require('./models/Message');
 
 
 
@@ -247,5 +248,52 @@ app.get('/api/sendToken/:token',(req,res,next) => {
       })
 
 })
+
+
+
+app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pour ajouter un User
+    const message = new Message({
+        mailRecipient: req.body.mailRecipient,
+
+        mailSender: req.body.mailSender,
+
+        message: req.body.message,
+
+        date: req.body.date
+
+    });
+    User.findOne({ token: req.params.token, mail: req.body.mailSender})
+        .then(user =>{
+            if(!user) {
+                return res.status(404).json({items: [{ status: false, message: 'User not Found' }]});
+            }
+            message.save()
+                .then(() => res.status(201).json({ items: [ {message : 'Message sent with success !'} ] }))
+                .catch(error => res.status(400).json({ error }));
+        })
+
+});
+
+
+app.get('/api/retrieveMessages/:token',
+    (req, res, next) => {
+        console.log(req.params.token);
+        User.findOne({token: req.params.token})
+            .then(user => {
+                if (!user) {
+                    return res.status(404).json({items: [{status: false, message: 'User not found'}]});
+                }
+                Message.find({ $or: [{ mailSender: user.mail }, { mailRecipient: user.mail }] })
+                    .then(message => {
+                            return res.status(200).json({items: [ message ]});
+                        }
+                    )
+
+            })
+
+    })
+
+
+
 module.exports = app;
 
