@@ -95,13 +95,19 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
   app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
     const { mail, password } = req.params;
     console.log("service : findUser(mail,password)")
-    User.findOne({ mail })
+    User.findOneAndUpdate(
+          { $and: [{ mail:mail },{password:password} ]},
+        { $set: { token : generateRandomString(20)  } }, // Add the new path to the paths array
+        { new: true }
+
+
+    )
       .then(user => {
         if (!user) {
           return res.status(404).json({items : [{ status : false }]});
         }
         
-        res.status(200).json({items : [{ status : true, valide: JSON.parse(user.valide) }]});
+        res.status(200).json({items : [{ status : true, valide: JSON.parse(user.valide), token: user.token }]});
       })
       .catch(error => res.status(500).json({ error }));
   }); 
