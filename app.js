@@ -95,19 +95,13 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
   app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
     const { mail, password } = req.params;
     console.log("service : findUser(mail,password)")
-    User.findOneAndUpdate(
-          { $and: [{ mail:mail },{password:password} ]},
-        { $set: { token : generateRandomString(20)  } }, // Add the new path to the paths array
-        { new: true }
-
-
-    )
+    User.findOne({ mail })
       .then(user => {
         if (!user) {
-          return res.status(404).json({items : [{ status : false }]});
+          return res.status(404).json({items : [{ statut : false }]});
         }
         
-        res.status(200).json({items : [{ status : true, valide: JSON.parse(user.valide), token: user.token }]});
+        res.status(200).json({items : [{ statut : true, valide: JSON.parse(user.valide), token: JSON.parse(user.token),  status: JSON.parse(user.status)}]});
       })
       .catch(error => res.status(500).json({ error }));
   }); 
@@ -145,12 +139,12 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       .catch(error => res.status(400).json({ error }));
   });
 
-  app.post('/api/addUni', (req, res, next) => {  // requete post pour ajouter un User
+  app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajouter un User
     const university = new University({
       name: req.body.name,
       suffixe_student: req.body.suffixe_student,
       suffixe_teacher: req.body.suffixe_teacher,
-      path: req.body.path,
+      path: [{}],
       image: req.body.image
     });
     university.save()
@@ -184,7 +178,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
     University.findOne({ suffixe_teacher: req.params.suffixe })
       .then(uni => {
         if (!uni) {
-          return res.status(404).json({items : [{ status : false }]});
+          return res.status(404).json({items : [{ statut : false }]});
 
         }
         res.status(200).json({items : uni.paths});
@@ -210,7 +204,7 @@ app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça
 
         }
 
-        res.status(200).json({items : [{ status : true}]});
+        res.status(200).json({items : [{ statut : true}]});
       })
       .catch(error => res.status(500).json({ error }));
 });
@@ -219,10 +213,10 @@ app.get('/api/resetPassword/:mail',(req,res, next) => {
 User.findOne({ mail: req.params.mail})
   .then(user =>{
     if(!user) {
-      return res.status(404).json({items: [{ status: false }]});
+      return res.status(404).json({items: [{ statut: false }]});
     }
     sendEmail(user.mail,user.password,'first_password');
-    res.status(200).json({items : [ {status: true} ]})
+    res.status(200).json({items : [ {statut: true} ]})
   })
 
 });
@@ -231,10 +225,10 @@ app.get('/api/sendValidToken/:mail',(req,res,next) => {
   User.findOne( { mail: req.params.mail})
       .then(user =>{
         if(!user){
-          return res.status(404).json({items: [{ status: false }]});
+          return res.status(404).json({items: [{ statut: false }]});
         }
         sendEmail(user.mail,user.token,'validToken')
-        return res.status(200).json( {items: [ {status: true}]})
+        return res.status(200).json( {items: [ {statut: true}]})
 
       })
 
@@ -246,10 +240,10 @@ app.get('/api/sendToken/:token',(req,res,next) => {
   { new: true }) // Return the updated document instead of the original document)
       .then(user =>{
         if(!user){
-          return res.status(404).json({items: [{ status: false }]});
+          return res.status(404).json({items: [{ statut: false }]});
         }
 
-        return res.status(200).json( {items: [ {status: 'Your account now is valid!'}]})
+        return res.status(200).json( {items: [ {statut: 'Your account now is valid!'}]})
 
       })
 
@@ -257,7 +251,7 @@ app.get('/api/sendToken/:token',(req,res,next) => {
 
 
 
-app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pour ajouter un User
+app.post('/api/node/:token', (req, res, next) => {  // requete post pour ajouter un User
     const message = new Message({
         mailRecipient: req.body.mailRecipient,
 
@@ -271,7 +265,7 @@ app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pou
     User.findOne({ token: req.params.token, mail: req.body.mailSender})
         .then(user =>{
             if(!user) {
-                return res.status(404).json({items: [{ status: false, message: 'User not Found' }]});
+                return res.status(404).json({items: [{ statut: false, message: 'User not Found' }]});
             }
             message.save()
                 .then(() => res.status(201).json({ items: [ {message : 'Message sent with success !'} ] }))
@@ -287,7 +281,7 @@ app.get('/api/retrieveMessages/:token',
         User.findOne({token: req.params.token})
             .then(user => {
                 if (!user) {
-                    return res.status(404).json({items: [{status: false, message: 'User not found'}]});
+                    return res.status(404).json({items: [{statut: false, message: 'User not found'}]});
                 }
                 Message.find({ $or: [{ mailSender: user.mail }, { mailRecipient: user.mail }] })
                     .then(message => {
