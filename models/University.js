@@ -37,7 +37,7 @@ const UniversitySchema = mongoose.Schema({
         ],
 
     image: {
-        type: Buffer ,
+        type: String ,
         required: false
     }
 

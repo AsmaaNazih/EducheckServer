@@ -6,6 +6,12 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 
+const bodyParser = require('body-parser');
+
+// Middleware pour parser le corps de la requête
+app.use(bodyParser.json({ limit: '20mb' })); // Limite de taille de 10 Mo
+app.use(bodyParser.urlencoded({ extended: true }));
+
 mongoose.connect('mongodb+srv://yasserelmellali11:Educheck@cluster0.k8blwbm.mongodb.net/?retryWrites=true&w=majority',
   { useNewUrlParser: true,
     useUnifiedTopology: true })
@@ -64,7 +70,7 @@ async function sendEmail(email, password, type) {
   }
   // Define the email options
   let mailOptions = {
-    from: 'pierreedouardhermenier@free.fr',
+    from: 'noreply@educheck.fr',
     to: email,
     subject: subject,
     text: text
@@ -101,7 +107,7 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
           return res.status(404).json({items : [{ statut : false }]});
         }
         
-        res.status(200).json({items : [{ statut : true, valide: JSON.parse(user.valide), token: JSON.parse(user.token),  status: JSON.parse(user.status)}]});
+        res.status(200).json({items : [{ statut : true, valide: JSON.parse(user.valide), token: user.token,  status: user.status}]});
       })
       .catch(error => res.status(500).json({ error }));
   }); 
@@ -144,7 +150,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       name: req.body.name,
       suffixe_student: req.body.suffixe_student,
       suffixe_teacher: req.body.suffixe_teacher,
-      path: [{}],
+      path: [],
       image: req.body.image
     });
     university.save()
