@@ -98,28 +98,28 @@ app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes 
       .catch(error => res.status(400).json({ error }));
   });
 
-  app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
-    const { mail, password } = req.params;
-    console.log("service : findUser(mail,password)")
-      User.findOneAndUpdate(
-          { $and: [{ mail:mail },{password:password} ]},
-          { $set: { token : generateRandomString(20)  } }, // Add the new path to the paths array
-          { new: true }
+app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
+  const { mail, password } = req.params;
+  console.log("service : findUser(mail,password)")
+    User.findOneAndUpdate(
+        { $and: [{ mail:mail },{password:password} ]},
+        { $set: { token : generateRandomString(20)  } }, // Add the new path to the paths array
+        { new: true }
 
 
-      )
-          .then(user => {
-        if (!user) {
-          return res.status(404).json({items : [{ statut : false }]});
-        }
-        
-        res.status(200).json({items : [{ statut : true, valide: JSON.parse(user.valide), token: user.token,  status: user.status}]});
-      })
-      .catch(error => res.status(500).json({ error }));
-  }); 
+    )
+        .then(user => {
+      if (!user) {
+        return res.status(404).json({items : [{ statut : false }]});
+      }
+      
+      res.status(200).json({items : [{ statut : true, valide: JSON.parse(user.valide), token: user.token,  status: user.status}]});
+    })
+    .catch(error => res.status(500).json({ error }));
+}); 
 
-app.put('/api/modifieUserPassword', (req, res, next) => {
-  User.updateOne({ mail: req.body.mail , password: req.body.password }, { password: req.body.password1 })
+app.put('/api/modifieUserPassword/:token', (req, res, next) => {
+  User.updateOne({ token: req.params.token , password: req.body.password }, { password: req.body.newPassword })
     .then(() => res.status(200).json({ items: [ {message : 'User password modfie !'} ] }))
     .catch(error => res.status(400).json({ error }));
 
@@ -132,8 +132,6 @@ app.delete('/api/deleteUser/:mail', (req, res, next) => {
 });
 
 app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un User
-  let valid;
-  valid = req.body.status !== 'Student';
     const user = new User({
       ine: req.body.ine,
       firstName: req.body.firstName,
@@ -142,61 +140,79 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       password: generateRandomString(8),
       mail: req.body.mail,
       token: generateRandomString(20),
-      valide: valid
-
-
+      valide: false | req.body.status == 'Teacher'
     });
     user.save()
       .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] })) , sendEmail(user.mail,user.password,'first_password')
       .catch(error => res.status(400).json({ error }));
   });
 
-  app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajouter un User
-    const university = new University({
-      name: req.body.name,
-      suffixe_student: req.body.suffixe_student,
-      suffixe_teacher: req.body.suffixe_teacher,
-      path: [],
-      image: req.body.image
-    });
-    university.save()
-      .then(uni => res.status(201).json({ items :  uni }))
+app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajouter un User
+
+  //TODO : regarder si le token match avec un admin et modifier le champ valide à true et le champ uniName à req.body.name pour cet admin
+  const university = new University({
+    name: req.body.name,
+    suffixe_student: req.body.suffixe_student,
+    suffixe_teacher: req.body.suffixe_teacher,
+    path: [],
+    image: req.body.image
+  });
+  university.save()
+    .then(uni => res.status(201).json({ items :  uni }))
+    .catch(error => res.status(400).json({ error }));
+});
+
+
+app.get('/api/getUniversity/:token', (req, res, next) => {  //on récupère tous les parcours
+  User.findOne({token:req.params.token})
+    .then(user =>
+      University.findOne({ name: user.uniName })
+        .then(uni => {
+          if (!uni) {
+            return res.status(404).json({items : [{ statut : false }]});
+
+          }
+          console.log(uni.name)
+          res.status(200).json({items : [uni]});
+        })
+        .catch(error => res.status(500).json({ error }))
+    )
+    .catch(error => res.status(404).json({items : [{statut : false}]}))
+});
+
+app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes les Universities
+  University.find()
+    .then(universities => res.status(200).json({items :  universities  }))
+    .catch(error => res.status(400).json({ error }));
+});
+
+app.put('/api/addUniPath/:id', (req, res, next) => {
+  University.findOneAndUpdate(
+    { _id : req.params.id }, // Search for the document by its name field
+    { $push: { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } }, // Add the new path to the paths array
+    { new: true } // Return the updated document instead of the original document
+)
+.then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
+.catch(error => res.status(400).json({ error }));
+});
+
+app.delete('/api/deleteUni/:id', (req, res, next) => {
+  University.deleteOne({ _id:req.params.id })
+    .then(() => res.status(200).json({ items: [ {message : 'University supprimé !'} ] }))
       .catch(error => res.status(400).json({ error }));
-  });
+});
 
-  app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes les Universities
-    University.find()
-      .then(universities => res.status(200).json({items :  universities  }))
-      .catch(error => res.status(400).json({ error }));
-  });
-  
-  app.put('/api/addUniPath/:id', (req, res, next) => {
-    University.findOneAndUpdate(
-      { _id : req.params.id }, // Search for the document by its name field
-      { $push: { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } }, // Add the new path to the paths array
-      { new: true } // Return the updated document instead of the original document
-  )
-  .then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
-  .catch(error => res.status(400).json({ error }));
-  });
-  
-  app.delete('/api/deleteUni/:id', (req, res, next) => {
-    University.deleteOne({ _id:req.params.id })
-      .then(() => res.status(200).json({ items: [ {message : 'University supprimé !'} ] }))
-        .catch(error => res.status(400).json({ error }));
-  });
+app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous les parcours
+  University.findOne({ suffixe_teacher: req.params.suffixe })
+    .then(uni => {
+      if (!uni) {
+        return res.status(404).json({items : [{ statut : false }]});
 
-  app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous les parcours
-    University.findOne({ suffixe_teacher: req.params.suffixe })
-      .then(uni => {
-        if (!uni) {
-          return res.status(404).json({items : [{ statut : false }]});
-
-        }
-        res.status(200).json({items : uni.paths});
-      })
-      .catch(error => res.status(500).json({ error }));
-  });
+      }
+      res.status(200).json({items : uni.paths});
+    })
+    .catch(error => res.status(500).json({ error }));
+});
 
 
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
