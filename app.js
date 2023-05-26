@@ -149,18 +149,34 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 
 app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajouter un User
 
-  //TODO : regarder si le token match avec un admin et modifier le champ valide à true et le champ uniName à req.body.name pour cet admin
-  const university = new University({
-    name: req.body.name,
-    suffixe_student: req.body.suffixe_student,
-    suffixe_teacher: req.body.suffixe_teacher,
-    path: [],
-    image: req.body.image
+  const token = req.params.token;
+
+  // Vérifier si le token correspond à un administrateur valide
+  User.findOne({ token: token })
+    .then(admin => {
+      if (!admin) {
+        // Si le token ne correspond à aucun administrateur, renvoyer une erreur
+        return res.status(401).json({ items : [{statut: false}] });
+      }
+
+      // Mettre à jour les champs "valide" et "uniName" de l'administrateur
+      admin.valide = true;
+      admin.uniName = req.body.name;
+      admin.save()
+      .then(() =>{
+      const university = new University({
+        name: req.body.name,
+        suffixe_student: req.body.suffixe_student,
+        suffixe_teacher: req.body.suffixe_teacher,
+        path: [],
+        image: req.body.image
+      });
+      university.save()
+        .then(uni => res.status(201).json({ items :  [uni] }))
+        .catch(error => res.status(400).json({ error }));
+      });
+    });
   });
-  university.save()
-    .then(uni => res.status(201).json({ items :  uni }))
-    .catch(error => res.status(400).json({ error }));
-});
 
 
 app.get('/api/getUniversity/:token', (req, res, next) => {  //on récupère tous les parcours
