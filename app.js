@@ -33,7 +33,7 @@ app.use((req, res, next) => {
 const User=require('./models/Users');
 const University = require('./models/University');
 const Message = require('./models/Message');
-
+const Cours = require('./models/Cours');
 
 
 //################################################### Fonctions ###################################################################
@@ -318,6 +318,52 @@ app.post('/api/node/:token', (req, res, next) => {  // requete post pour ajouter
 
 });
 
+
+app.get('/api/getCourses/:token', (req, res, next) => {  //on récupère tous les parcours
+    User.findOne({ token: req.params.token })
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({items : [{ statut : false, message: 'the user was not found' }]});
+
+            }
+            Cours.find({   uniName:user.uniName,pathType: user.path.type,pathName:user.path.name })
+                .then(cours => {
+                    return res.status(201).json( {items: [{ statut: true , cours: cours }]})
+                } )
+                .catch(error => res.status(500).json({error}))
+        })
+        .catch(error => res.status(500).json({ error }));
+});
+
+
+
+app.post('/api/setCourses/:token', (req, res, next) => {  // requete post pour ajouter un User
+
+    User.findOne({ $and: [{token: req.params.token, status:'Teacher' }]})
+        .then(user =>{
+            if(!user) {
+                return res.status(404).json({items: [{ statut: false, message: 'User not Found' }]});
+            }
+            const cour = new Cours({
+                name: req.body.name,
+
+                uniName: user.uniName,
+
+                pathName: user.path.name.join('/'),
+
+                pathType: user.path.type.join('/'),
+
+                credit: req.body.credit,
+
+                profName: user.lastName
+
+            });
+            cour.save()
+                .then(() => res.status(201).json({ items: [ {statut: true, cour: cour} ] }))
+                .catch(error => res.status(400).json({ error }));
+        })
+
+});
 
 app.get('/api/retrieveMessages/:token',
     (req, res, next) => {
