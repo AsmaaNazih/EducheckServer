@@ -70,7 +70,7 @@ async function sendEmail(email, password, type) {
   }
   // Define the email options
   let mailOptions = {
-    from: 'noreply@educheck.fr',
+    from: 'pierreedouardhermenier@free.fr',
     to: email,
     subject: subject,
     text: text
@@ -140,7 +140,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       password: generateRandomString(8),
       mail: req.body.mail,
       token: generateRandomString(20),
-      valide: false | req.body.status == 'Teacher'
+      valide: false || (req.body.status == 'Teacher')
     });
     user.save()
       .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] })) , sendEmail(user.mail,user.password,'first_password')
@@ -154,7 +154,7 @@ app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajout
   // Vérifier si le token correspond à un administrateur valide
   User.findOne({ token: token })
     .then(admin => {
-      if (!admin) {
+      if (admin.status != "Admin") {
         // Si le token ne correspond à aucun administrateur, renvoyer une erreur
         return res.status(401).json({ items : [{statut: false}] });
       }
@@ -202,14 +202,26 @@ app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes 
     .catch(error => res.status(400).json({ error }));
 });
 
-app.put('/api/addUniPath/:id', (req, res, next) => {
-  University.findOneAndUpdate(
-    { _id : req.params.id }, // Search for the document by its name field
-    { $push: { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } }, // Add the new path to the paths array
-    { new: true } // Return the updated document instead of the original document
-)
-.then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
-.catch(error => res.status(400).json({ error }));
+app.put('/api/addUniPath/:token', (req, res, next) => {
+ //modif ici
+  const token = req.params.token;
+
+  // Vérifier si le token correspond à un administrateur valide
+  User.findOne({ token: token })
+    .then(admin => {
+      if (admin.status != "Admin") {
+        // Si le token ne correspond à aucun administrateur, renvoyer une erreur
+        return res.status(401).json({ items : [{statut: false}] });
+      }
+      University.findOneAndUpdate(
+        { name : req.body.uniName }, // Search for the document by its name field
+        { $push: { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } }, // Add the new path to the paths array
+        { new: true } // Return the updated document instead of the original document
+    )
+    .then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
+    .catch(error => res.status(400).json({ error }));
+      
+    });
 });
 
 app.delete('/api/deleteUni/:id', (req, res, next) => {
@@ -230,11 +242,7 @@ app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous le
     .catch(error => res.status(500).json({ error }));
 });
 
-
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
-  console.log(req.body.name)
-  console.log(req.body.uniName)
-  console.log(req.body.type)
   User.findOneAndUpdate(
       {  mail: req.body.mail },
       { $push: { uniName: req.body.uniName, path: { type: req.body.type ,name: req.body.name } } }, // Add the new path to the paths array
