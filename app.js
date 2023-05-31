@@ -394,10 +394,12 @@ app.get('/api/retrieveMessages/:token',
 app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les parcours
     User.findOne({token:req.params.token})
         .then(user =>
-
-            User.find({path: { type: user.path.type ,name: user.path.name }, uniName: user.uniName })
+            User.find({
+                'path.type': user.path.type,
+                'path.name': user.path.name,
+                uniName: user.uniName })
                 .then(users =>
-                    res.status(200).json({items : [ { mail:users.map(user => user.mail) } ] } )
+                    res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
                 )
 
 
