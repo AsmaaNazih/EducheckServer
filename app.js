@@ -225,25 +225,43 @@ app.put('/api/addUniPath/:token', (req, res, next) => {
 });
 
 app.put('/api/editAcademicBackground/:token', (req, res, next) => {
-   const token = req.params.token;
-   const id = new ObjectId(req.body.id) 
-   // Vérifier si le token correspond à un administrateur valide
-   User.findOne({ token: token })
-     .then(admin => {
-       if (admin.status != "Admin") {
-         // Si le token ne correspond à aucun administrateur, renvoyer une erreur
-         return res.status(401).json({ items : [{statut: false}] });
-       }
-       University.findOneAndUpdate(
-         { name : admin.uniName }, 
-         { $set : { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referent } } },
-         { paths: [{ _id: id }] }
-     )
-     .then(() => res.status(200).json({ items: [ {message : 'change path !'} ] }))
-     .catch(error => res.status(400).json({ error }));
-       
-     });
- });
+    const token = req.params.token;
+    const id = new ObjectId(req.body._id);
+
+    // Vérifier si le token correspond à un administrateur valide
+    User.findOne({ token: token })
+        .then(admin => {
+            if (admin.status != "Admin") {
+                // Si le token ne correspond à aucun administrateur, renvoyer une erreur
+                return res.status(401).json({ items : [{statut: false}] });
+            }
+
+            University.findOneAndUpdate(
+                {
+                    name: admin.uniName,
+                    "paths._id": id  // Check if the id exists in the paths array
+                },
+                {
+                    $set: {
+                        "paths.$.type": req.body.type,
+                        "paths.$.name": req.body.pathName,
+                        "paths.$.referant": req.body.referant
+                    }
+                }
+            )
+                .then(result => {
+                    if (result) {
+                        // Path updated successfully
+                        return res.status(200).json({ items: [{ message : 'change path !' }] });
+                    } else {
+                        // No path found with the provided id
+                        return res.status(404).json({ items: [{ message: 'Path not found' }] });
+                    }
+                })
+                .catch(error => res.status(400).json({ error }));
+        });
+});
+
 
 app.delete('/api/deleteUni/:id', (req, res, next) => {
   University.deleteOne({ _id:req.params.id })
@@ -374,23 +392,64 @@ app.get('/api/getCourses/:token', (req, res, next) => {  //on récupère tous le
 
 
 
-app.post('/api/setCourses/:token', (req, res, next) => {  // requete post pour ajouter un User
-    User.findOne({ $and: [{token: req.params.token, status:'Teacher' }]})
-        .then(user =>{
-            if(!user) {
-                return res.status(404).json({items: [{ statut: false, message: 'User not Found' }]});
+app.post('/api/setCourses/:token', (req, res, next) => {
+    const id = new ObjectId(req.body._id);
+
+    User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ items: [{ status: false, message: 'User not Found' }] });
             }
+
             University.findOneAndUpdate(
-                { $and: [{name:user.uniName  }]},
-                { $push: { path: { cours : {name: req.body.name ,credit: req.body.credit, profName: user.lastName     } } } }, // Add the new path to the paths array
-                { path: [{ type: 'user.path.type' , name: 'user.path.name' ,referant: 'user.path.referant'  }] } // Return the updated document instead of the original document
-
+                {
+                    name: user.uniName,
+                    'paths.name': req.body.pathName // Search for the path by name
+                },
+                {
+                    $push: {
+                        'paths.$.cours': {
+                            name: req.body.name,
+                            credit: req.body.credit,
+                            profName: user.lastName
+                        }
+                    }
+                },
+                { new: true } // Return the updated document instead of the original document
             )
-                .then(uni => res.status(201).json({ items: [ {statut: true, cour: 'uni.path.cours' } ] }))
+                .then(uni => {
+                    // If the path doesn't exist, create a new path and add the course to it
+                    if (!uni) {
+                        return University.findOneAndUpdate(
+                            { name: user.uniName },
+                            {
+                                $push: {
+                                    paths: {
+                                        type: req.body.type,
+                                        name: req.body.pathName,
+                                        referant: req.body.referant,
+                                        cours: [
+                                            {
+                                                name: req.body.name,
+                                                credit: req.body.credit,
+                                                profName: user.lastName
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            { new: true } // Return the updated document instead of the original document
+                        );
+                    } else {
+                        return Promise.resolve(uni);
+                    }
+                })
+                .then(uni => res.status(201).json({ items: [{ status: true, cour: uni.paths }] }))
                 .catch(error => res.status(400).json({ error }));
-        })
-
+        });
 });
+
+
 
 app.get('/api/retrieveMessages/:token',
     (req, res, next) => {

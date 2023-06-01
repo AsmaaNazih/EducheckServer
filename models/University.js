@@ -17,40 +17,38 @@ const UniversitySchema = mongoose.Schema({
         required: true
     },
 
-    paths: [{
-
-        type: {
-            type: String,
-            required: false
-        },
-
-        name: {
-            type: String,
-            required: false
-        },
-        referant: {
-            type: String ,
-            required: false
-        },
-        cours: [{
+    paths: [
+        {
+            type: {
+                type: String,
+                required: false
+            },
             name: {
-                required: true,
-                type: String
+                type: String,
+                required: false
             },
-            credit: {
-                required: true,
-                type: String
+            referant: {
+                type: String,
+                required: false
             },
-            profName: {
-                required: false,
-                type: String
-            }
-        }]
-
-
-
-    }
-        ],
+            cours: [
+                {
+                    name: {
+                        type: String,
+                        required: true
+                    },
+                    credit: {
+                        type: String,
+                        required: true
+                    },
+                    profName: {
+                        type: String,
+                        required: false
+                    }
+                }
+            ]
+        }
+    ],
 
     image: {
         type: String ,
