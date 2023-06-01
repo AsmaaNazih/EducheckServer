@@ -11,6 +11,7 @@ const UniversitySchema = mongoose.Schema({
         type: String,
         required: true
     },
+
     suffixe_teacher: {
         type: String,
         required: true

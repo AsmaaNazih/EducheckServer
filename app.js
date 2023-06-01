@@ -236,8 +236,8 @@ app.put('/api/editAcademicBackground/:token', (req, res, next) => {
        }
        University.findOneAndUpdate(
          { name : req.body.uniName }, 
-         { $set: { 'paths.$[elem]': { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } },
-         { arrayFilters: [{ 'elem._id': id }] } 
+         { $set : { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } },
+         { paths: [{ _id: id }] }
      )
      .then(() => res.status(200).json({ items: [ {message : 'change path !'} ] }))
      .catch(error => res.status(400).json({ error }));
