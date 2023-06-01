@@ -34,6 +34,7 @@ const User=require('./models/Users');
 const University = require('./models/University');
 const Message = require('./models/Message');
 const Cours = require('./models/Cours');
+const { ObjectId } = require('mongodb');
 
 
 //################################################### Fonctions ###################################################################
@@ -203,7 +204,6 @@ app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes 
 });
 
 app.put('/api/addUniPath/:token', (req, res, next) => {
- //modif ici
   const token = req.params.token;
 
   // Vérifier si le token correspond à un administrateur valide
@@ -218,11 +218,32 @@ app.put('/api/addUniPath/:token', (req, res, next) => {
         { $push: { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } }, // Add the new path to the paths array
         { new: true } // Return the updated document instead of the original document
     )
-    .then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
+    .then(() => res.status(200).json({ items: [ {message : 'add path !'} ] }))
     .catch(error => res.status(400).json({ error }));
       
     });
 });
+
+app.put('/api/editAcademicBackground/:token', (req, res, next) => {
+   const token = req.params.token;
+   const id = new ObjectId(req.body._id) 
+   // Vérifier si le token correspond à un administrateur valide
+   User.findOne({ token: token })
+     .then(admin => {
+       if (admin.status != "Admin") {
+         // Si le token ne correspond à aucun administrateur, renvoyer une erreur
+         return res.status(401).json({ items : [{statut: false}] });
+       }
+       University.findOneAndUpdate(
+         { name : req.body.uniName }, 
+         { $set: { 'paths.$[elem]': { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } },
+         { arrayFilters: [{ 'elem._id': id }] } 
+     )
+     .then(() => res.status(200).json({ items: [ {message : 'change path !'} ] }))
+     .catch(error => res.status(400).json({ error }));
+       
+     });
+ });
 
 app.delete('/api/deleteUni/:id', (req, res, next) => {
   University.deleteOne({ _id:req.params.id })
