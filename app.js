@@ -314,7 +314,21 @@ app.put('/api/node/:token', (req, res, next) => {  // requete post pour ajouter 
             if(!user) {
                 return res.status(404).json({items: [{ statut: false, message: 'User not Found' }]});
             }
-            res.status(200).json({ items: [ { message : 'Message sent with success !'} ] })
+
+            User.findOneAndUpdate(
+                     { mail: req.body.mailRecipient } ,
+                { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date     } } }, // Add the new path to the paths array
+                { new: true } // Return the updated document instead of the original document
+
+            )
+                .then(user => {
+                    if (!user) {
+                        return res.status(404).json({items: [{statut: false, message: 'User not Found'}]});
+                    }
+                    res.status(200).json({items: [{message: 'Message sent with success !'}]})
+                })
+                .catch(error => res.status(400).json({ error }))
+
 
         })
         .catch(error => res.status(400).json({ error }));
@@ -340,28 +354,18 @@ app.get('/api/getCourses/:token', (req, res, next) => {  //on récupère tous le
 
 
 app.post('/api/setCourses/:token', (req, res, next) => {  // requete post pour ajouter un User
-
     User.findOne({ $and: [{token: req.params.token, status:'Teacher' }]})
         .then(user =>{
             if(!user) {
                 return res.status(404).json({items: [{ statut: false, message: 'User not Found' }]});
             }
-            const cour = new Cours({
-                name: req.body.name,
+            University.findOneAndUpdate(
+                { $and: [{name:user.uniName  }]},
+                { $push: { path: { cours : {name: req.body.name ,credit: req.body.credit, profName: user.lastName     } } } }, // Add the new path to the paths array
+                { new: true } // Return the updated document instead of the original document
 
-                uniName: user.uniName,
-
-                pathName: user.path.name.join('/'),
-
-                pathType: user.path.type.join('/'),
-
-                credit: req.body.credit,
-
-                profName: user.lastName
-
-            });
-            cour.save()
-                .then(() => res.status(201).json({ items: [ {statut: true, cour: cour} ] }))
+            )
+                .then(uni => res.status(201).json({ items: [ {statut: true, cour: 'uni.path.cours' } ] }))
                 .catch(error => res.status(400).json({ error }));
         })
 

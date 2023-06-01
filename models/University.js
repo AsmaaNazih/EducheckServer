@@ -30,9 +30,24 @@ const UniversitySchema = mongoose.Schema({
         referant: {
             type: String ,
             required: false
-        }
+        },
+        cours: [{
+            name: {
+                required: true,
+                type: String
+            },
+            credit: {
+                required: true,
+                type: String
+            },
+            profName: {
+                required: false,
+                type: String
+            }
+        }]
 
-    
+
+
     }
         ],
 
@@ -40,21 +55,6 @@ const UniversitySchema = mongoose.Schema({
         type: String ,
         required: false
     },
-
-    cours: [{
-        name: {
-            required: true,
-            type: String
-        },
-        credit: {
-            required: true,
-            type: String
-        },
-        profName: {
-            required: false,
-            type: String
-        }
-    }]
 
 });
 
