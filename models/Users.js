@@ -61,8 +61,33 @@ const usersSchema = mongoose.Schema({
     uniName: {
         type:String,
         required: false
-    }
+    },
 
+
+    messages: [{
+
+        mailRecipient: {
+            type: String,
+            required: true
+        },
+
+        mailSender: {
+            type: String,
+            required: true
+
+        },
+
+        message: {
+            type: String,
+            required:true
+        },
+
+        date: {
+            type: Date,
+            required: false
+        }
+
+    }]
 });
 
 
