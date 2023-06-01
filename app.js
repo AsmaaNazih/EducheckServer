@@ -324,27 +324,21 @@ app.get('/api/sendToken/:token',(req,res,next) => {
 
 
 
-app.post('/api/node/:token', (req, res, next) => {  // requete post pour ajouter un User
-    const message = new Message({
-        mailRecipient: req.body.mailRecipient,
+app.put('/api/node/:token', (req, res, next) => {  // requete post pour ajouter un User
+    User.findOneAndUpdate({
+            $and:[ {token: req.params.token, mail: req.body.mailSender } ] },
+        { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date     } } }, // Add the new path to the paths array
+        { new: true } // Return the updated document instead of the original document
 
-        mailSender: req.body.mailSender,
-
-        message: req.body.message,
-
-        date: req.body.date
-
-    });
-    User.findOne({ token: req.params.token, mail: req.body.mailSender})
+        )
         .then(user =>{
             if(!user) {
                 return res.status(404).json({items: [{ statut: false, message: 'User not Found' }]});
             }
-            message.save()
-                .then(() => res.status(201).json({ items: [ {message : 'Message sent with success !'} ] }))
-                .catch(error => res.status(400).json({ error }));
-        })
+            res.status(200).json({ items: [ { message : 'Message sent with success !'} ] })
 
+        })
+        .catch(error => res.status(400).json({ error }));
 });
 
 
@@ -402,14 +396,12 @@ app.get('/api/retrieveMessages/:token',
                 if (!user) {
                     return res.status(404).json({items: [{statut: false, message: 'User not found'}]});
                 }
-                Message.find({ $or: [{ mailSender: user.mail }, { mailRecipient: user.mail }] })
-                    .then(message => {
-                            return res.status(200).json({items: [ message ]});
-                        }
-                    )
+
+                return res.status(200).json({items: [ {messages: user.messages, statut: true} ]});
+
 
             })
-
+            .catch(error => res.status(404).json({items : [{statut : false}]}))
     });
 
 app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les parcours

@@ -17,7 +17,7 @@ const UniversitySchema = mongoose.Schema({
     },
 
     paths: [{
-        _id:false,
+
         type: {
             type: String,
             required: false
@@ -39,7 +39,22 @@ const UniversitySchema = mongoose.Schema({
     image: {
         type: String ,
         required: false
-    }
+    },
+
+    cours: [{
+        name: {
+            required: true,
+            type: String
+        },
+        credit: {
+            required: true,
+            type: String
+        },
+        profName: {
+            required: false,
+            type: String
+        }
+    }]
 
 });
 
