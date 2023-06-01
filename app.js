@@ -203,7 +203,6 @@ app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes 
 });
 
 app.put('/api/addUniPath/:token', (req, res, next) => {
- //modif ici
   const token = req.params.token;
 
   // Vérifier si le token correspond à un administrateur valide
@@ -223,6 +222,28 @@ app.put('/api/addUniPath/:token', (req, res, next) => {
       
     });
 });
+
+app.put('/api/editAcademicBackground/:token', (req, res, next) => {
+  //modif ici remplace l'ancien par le nouveau 
+   const token = req.params.token;
+ 
+   // Vérifier si le token correspond à un administrateur valide
+   User.findOne({ token: token })
+     .then(admin => {
+       if (admin.status != "Admin") {
+         // Si le token ne correspond à aucun administrateur, renvoyer une erreur
+         return res.status(401).json({ items : [{statut: false}] });
+       }
+       University.findOneAndUpdate(
+         { name : req.body.uniName }, // Search for the document by its name field
+         { $push: { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } }, // Add the new path to the paths array
+         { new: true } // Return the updated document instead of the original document
+     )
+     .then(() => res.status(200).json({ items: [ {message : 'path ajoute !'} ] }))
+     .catch(error => res.status(400).json({ error }));
+       
+     });
+ });
 
 app.delete('/api/deleteUni/:id', (req, res, next) => {
   University.deleteOne({ _id:req.params.id })
