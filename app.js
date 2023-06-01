@@ -383,7 +383,7 @@ app.post('/api/setCourses/:token', (req, res, next) => {  // requete post pour a
             University.findOneAndUpdate(
                 { $and: [{name:user.uniName  }]},
                 { $push: { path: { cours : {name: req.body.name ,credit: req.body.credit, profName: user.lastName     } } } }, // Add the new path to the paths array
-                { new: true } // Return the updated document instead of the original document
+                { path: [{ type: 'user.path.type' , name: 'user.path.name' ,referant: 'user.path.referant'  }] } // Return the updated document instead of the original document
 
             )
                 .then(uni => res.status(201).json({ items: [ {statut: true, cour: 'uni.path.cours' } ] }))
