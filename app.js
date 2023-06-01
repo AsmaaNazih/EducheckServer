@@ -226,7 +226,7 @@ app.put('/api/addUniPath/:token', (req, res, next) => {
 
 app.put('/api/editAcademicBackground/:token', (req, res, next) => {
    const token = req.params.token;
-   const id = new ObjectId(req.body._id) 
+   const id = new ObjectId(req.body.id) 
    // Vérifier si le token correspond à un administrateur valide
    User.findOne({ token: token })
      .then(admin => {
@@ -235,8 +235,8 @@ app.put('/api/editAcademicBackground/:token', (req, res, next) => {
          return res.status(401).json({ items : [{statut: false}] });
        }
        University.findOneAndUpdate(
-         { name : req.body.uniName }, 
-         { $set : { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referant } } },
+         { name : admin.uniName }, 
+         { $set : { paths: { type: req.body.type ,name: req.body.pathName, referant: req.body.referent } } },
          { paths: [{ _id: id }] }
      )
      .then(() => res.status(200).json({ items: [ {message : 'change path !'} ] }))
