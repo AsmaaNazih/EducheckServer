@@ -262,6 +262,41 @@ app.put('/api/editAcademicBackground/:token', (req, res, next) => {
         });
 });
 
+app.delete('/api/deleteAcademicBackground/:token', (req, res, next) => {
+  const token = req.params.token;
+    const id = new ObjectId(req.body._id);
+
+    // Vérifier si le token correspond à un administrateur valide
+    User.findOne({ token: token })
+        .then(admin => {
+            if (admin.status != "Admin") {
+                // Si le token ne correspond à aucun administrateur, renvoyer une erreur
+                return res.status(401).json({ items : [{statut: false}] });
+            }
+
+            University.findOneAndUpdate(
+                {
+                    name: admin.uniName,
+                    "paths._id": id  // Check if the id exists in the paths array
+                },
+                {
+                  $pull: {
+                    paths: { _id: id }
+                  }
+              }
+            )
+            .then(result => {
+              if (result) {
+                  // Path updated successfully
+                  return res.status(200).json({ items: [{ message : 'deleted path !' }] });
+              } else {
+                  // No path found with the provided id
+                  return res.status(404).json({ items: [{ message: 'Path not found' }] });
+              }
+          })
+          .catch(error => res.status(400).json({ error }));
+  });
+});
 
 app.delete('/api/deleteUni/:id', (req, res, next) => {
   University.deleteOne({ _id:req.params.id })
