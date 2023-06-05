@@ -317,6 +317,10 @@ app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous le
 });
 
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
+  console.log(req.body.mail)
+  console.log(req.body.uniName)
+  console.log(req.body.type)
+  console.log(req.body.name )
   User.findOneAndUpdate(
       {  mail: req.body.mail },
       { $push: { uniName: req.body.uniName, path: { type: req.body.type ,name: req.body.name } } }, // Add the new path to the paths array
@@ -377,7 +381,7 @@ app.get('/api/sendToken/:token',(req,res,next) => {
 
 
 
-app.put('/api/node/:token', (req, res, next) => {  // requete post pour ajouter un User
+app.put('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pour ajouter un User
     User.findOneAndUpdate({
             $and:[ {token: req.params.token, mail: req.body.mailSender } ] },
         { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date     } } }, // Add the new path to the paths array
