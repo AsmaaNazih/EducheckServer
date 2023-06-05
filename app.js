@@ -381,7 +381,7 @@ app.get('/api/sendToken/:token',(req,res,next) => {
 
 
 
-app.put('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pour ajouter un User
+app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pour ajouter un User
     User.findOneAndUpdate({
             $and:[ {token: req.params.token, mail: req.body.mailSender } ] },
         { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date     } } }, // Add the new path to the paths array
@@ -443,7 +443,8 @@ app.post('/api/setCourses/:token', (req, res, next) => {
             University.findOneAndUpdate(
                 {
                     name: user.uniName,
-                    'paths.name': req.body.pathName // Search for the path by name
+                    'paths.name': user.path.name ,// Search for the path by name
+                    'paths.type': user.path.type
                 },
                 {
                     $push: {
@@ -464,9 +465,9 @@ app.post('/api/setCourses/:token', (req, res, next) => {
                             {
                                 $push: {
                                     paths: {
-                                        type: req.body.type,
-                                        name: req.body.pathName,
-                                        referant: req.body.referant,
+                                        type: user.path.type,
+                                        name: user.path.name,
+                                        referant: user.mail,
                                         cours: [
                                             {
                                                 name: req.body.name,
@@ -498,8 +499,8 @@ app.get('/api/retrieveMessages/:token',
                 if (!user) {
                     return res.status(404).json({items: [{statut: false, message: 'User not found'}]});
                 }
-
-                return res.status(200).json({items: [ {messages: user.messages, statut: true} ]});
+                console.log(user.messages)
+                return res.status(200).json({items: [ { mailSenders :user.messages.map(message => message.mailSender),mailRecipients :user.messages.map(message => message.mailRecipient), messages: user.messages.map(message => message.message), statut: true} ]});
 
 
             })
