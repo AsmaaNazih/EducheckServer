@@ -239,7 +239,7 @@ app.put('/api/editAcademicBackground/:token', (req, res, next) => {
 
             University.findOneAndUpdate(
                 {
-                    name: admin.uniName,
+                    _id: admin.uniName,
                     "paths._id": id  // Check if the id exists in the paths array
                 },
                 {
@@ -277,7 +277,7 @@ app.delete('/api/deleteAcademicBackground/:token', (req, res, next) => {
 
             University.findOneAndUpdate(
                 {
-                    name: admin.uniName,
+                    _id: admin.uniName,
                     "paths._id": id  // Check if the id exists in the paths array
                 },
                 {
