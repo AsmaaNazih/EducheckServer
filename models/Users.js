@@ -44,18 +44,8 @@ const usersSchema = mongoose.Schema({
     },
 
     path: {
-        _id:false,
-        type: {
-            type: String,
-            required: false
-        },
-
-        name: {
-            type: String,
-            required: false
-        }
-
-
+        type: String,
+        required:false
     },
 
     uniName: {

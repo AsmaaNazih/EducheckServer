@@ -348,25 +348,34 @@ app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous le
 
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
   console.log(req.body.mail)
-  console.log(req.body.uniName)
   console.log(req.body.type)
   console.log(req.body.name )
-  User.findOneAndUpdate(
-      {  mail: req.body.mail },
-      { $push: { uniName: req.body._id, path: { type: req.body.type ,name: req.body.name } } }, // Add the new path to the paths array
-       { new: true } // Return the updated document instead of the original document
-  )
-      .then(user => {
 
-        if (!user) {
-          console.log("user_not_found")
-          return res.status(404).json({items : [{ error : "USER_NOT_FOUND" }]});
+    University.findOne({_id:req.body._id,'paths.name':req.body.name,'paths.type':req.body.type })
+        .then(uni => {
+            if(!uni){
+                console.log("uni_not_found")
+                return res.status(404).json({items : [{ error : "UNI_NOT_FOUND" }]});
+            }
+            User.findOneAndUpdate(
+                {  mail: req.body.mail },
+                { $set: { uniName: req.body._id, path: uni.paths.find(p => p.name === req.body.name && p.type === req.body.type)._id  } }, // Add the new path to the paths array
+                { new: true } // Return the updated document instead of the original document
+            )
+                .then(user => {
 
-        }
+                    if (!user) {
+                        console.log("user_not_found")
+                        return res.status(404).json({items : [{ error : "USER_NOT_FOUND" }]});
 
-        res.status(200).json({items : [{ statut : true}]});
-      })
-      .catch(error => res.status(500).json({ error }));
+                    }
+
+                    res.status(200).json({items : [{ statut : true,message: 'path updated!'}]});
+                })
+                .catch(error => res.status(500).json({ error }))
+        .catch(error => res.status(500).json({ error }));
+
+        })
 });
 
 app.get('/api/resetPassword/:mail',(req,res, next) => {
