@@ -439,8 +439,8 @@ app.post('/api/setCourses/:token', (req, res, next) => {
             University.findOneAndUpdate(
                 {
                     name: user.uniName,
-                    'paths.name': user.path.name ,// Search for the path by name
-                    'paths.type': user.path.type
+                    'paths.name': req.body.pathName ,// Search for the path by name
+                    'paths.type': req.body.pathType
                 },
                 {
                     $push: {
