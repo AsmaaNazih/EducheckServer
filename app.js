@@ -143,10 +143,16 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       token: generateRandomString(20),
       valide: false || (req.body.status == 'Teacher')
     });
+    User.findOne({ token: token })
+    .then(user => {
+      if (!user) {
+        // Si le token ne correspond à aucun administrateur, renvoyer une erreur
+        return res.status(401).json({ items : [{statut: false}] });
+      }
     user.save()
       .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] })) , sendEmail(user.mail,user.password,'first_password')
       .catch(error => res.status(400).json({ error }));
-  });
+  })});
 
 app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajouter un User
 
@@ -468,7 +474,7 @@ app.get('/api/getCourses/:token', (req, res, next) => {
                     const path = uni.paths.find(path => path._id.toString() === user.path);
                     const cours = path ? path.cours : [];
 
-                    return res.status(201).json({ items: [{ status: true, cours }] });
+                    return res.status(201).json({ items: [{ cours }] });
                 })
                 .catch(error => res.status(500).json({ error }));
         })
@@ -555,8 +561,7 @@ app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les
     User.findOne({token:req.params.token})
         .then(user =>
             User.find({
-                'path.type': user.path.type,
-                'path.name': user.path.name,
+                'path': user.path,
                 uniName: user.uniName })
                 .then(users =>
                     res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
