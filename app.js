@@ -145,7 +145,7 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
     });
     User.findOne({ token: token })
     .then(user => {
-      if (!user) {
+      if (user) {
         // Si le token ne correspond à aucun administrateur, renvoyer une erreur
         return res.status(401).json({ items : [{statut: false}] });
       }
