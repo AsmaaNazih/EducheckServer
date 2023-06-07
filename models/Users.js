@@ -77,6 +77,26 @@ const usersSchema = mongoose.Schema({
             required: false
         }
 
+    }],
+
+    notes: [{
+
+        nameCours: {
+            type: String,
+            required: true
+        },
+
+        type: {
+            type: String,
+            required: true
+
+        },
+
+        note: {
+            type: String,
+            required:true
+        }
+
     }]
 });
 

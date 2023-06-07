@@ -364,7 +364,7 @@ app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça
                 return res.status(404).json({items : [{ error : "UNI_NOT_FOUND" }]});
             }
             User.findOneAndUpdate(
-                {  mail: req.body.mail ,status: 'Student'},
+                {  mail: req.body.mail},
                 { $set: { uniName: req.body._id, path: uni.paths.find(p => p.name === req.body.name && p.type === req.body.type)._id  } }, // Add the new path to the paths array
                 { new: true } // Return the updated document instead of the original document
             )
@@ -384,7 +384,7 @@ app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça
         })
 });
 
-app.put('/api/pathTeacher/', (req, res, next) => {  //on cherche un user par ça mail et son password
+app.put('/api/pathTeacher/:token', (req, res, next) => {  //on cherche un user par ça mail et son password
     console.log(req.body.mail)
     console.log(req.body.type)
     console.log(req.body.name )
@@ -396,7 +396,7 @@ app.put('/api/pathTeacher/', (req, res, next) => {  //on cherche un user par ça
                 return res.status(404).json({items : [{ error : "UNI_NOT_FOUND" }]});
             }
             User.findOneAndUpdate(
-                {  mail: req.body.mail,status: 'Teacher' },
+                {  mail: req.body.mail,status: 'Teacher',token:req.params.token },
                 { $push: { uniName: req.body._id, path: uni.paths.find(p => p.name === req.body.name && p.type === req.body.type)._id  } }, // Add the new path to the paths array
                 { new: true } // Return the updated document instead of the original document
             )
@@ -602,6 +602,19 @@ app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les
 
 
         )
+        .catch(error => res.status(404).json({items : [{statut : false}]}))
+});
+
+app.get('/api/getNotes/:token', (req, res, next) => {  //on récupère tous les parcours
+    User.findOne({token:req.params.token})
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({items: [{statut: false, message: 'User not found'}]});
+            }
+            const notes = user.notes.find(notes => notes.nameCours === req.body.nameCours);
+
+
+        })
         .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
 
