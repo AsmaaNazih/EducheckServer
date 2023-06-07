@@ -151,7 +151,6 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
 app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajouter un User
 
   const token = req.params.token;
-
   // Vérifier si le token correspond à un administrateur valide
   User.findOne({ token: token })
     .then(admin => {
@@ -162,18 +161,20 @@ app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajout
 
       // Mettre à jour les champs "valide" et "uniName" de l'administrateur
       admin.valide = true;
-      admin.uniName = req.body.name;
       admin.save()
       .then(() =>{
-      const university = new University({
-        name: req.body.name,
+        const university = new University({
+        name: req.body.uniName,
         suffixe_student: req.body.suffixe_student,
         suffixe_teacher: req.body.suffixe_teacher,
         path: [],
         image: req.body.image
       });
       university.save()
-        .then(uni => res.status(201).json({ items :  [uni] }))
+        .then(uni =>{
+          admin.uniName = uni._id,
+          admin.save(),
+          res.status(201).json({ items :  [uni] })})
         .catch(error => res.status(400).json({ error }));
       });
     });
@@ -183,7 +184,7 @@ app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajout
 app.get('/api/getUniversity/:token', (req, res, next) => {  //on récupère tous les parcours
   User.findOne({token:req.params.token})
     .then(user =>
-      University.findOne({ name: user.uniName })
+      University.findOne({ _id: user.uniName })
         .then(uni => {
           if (!uni) {
             return res.status(404).json({items : [{ statut : false }]});
@@ -238,7 +239,7 @@ app.put('/api/editAcademicBackground/:token', (req, res, next) => {
 
             University.findOneAndUpdate(
                 {
-                    name: admin.uniName,
+                    _id: admin.uniName,
                     "paths._id": id  // Check if the id exists in the paths array
                 },
                 {
@@ -276,7 +277,7 @@ app.delete('/api/deleteAcademicBackground/:token', (req, res, next) => {
 
             University.findOneAndUpdate(
                 {
-                    name: admin.uniName,
+                    _id: admin.uniName,
                     "paths._id": id  // Check if the id exists in the paths array
                 },
                 {
@@ -304,6 +305,35 @@ app.delete('/api/deleteUni/:id', (req, res, next) => {
       .catch(error => res.status(400).json({ error }));
 });
 
+app.put('/api/editUniversity/:token',(req, res, next) => {
+  console.log(req.body._id + "ici")
+  const id = new ObjectId(req.body._id);
+  User.findOne({token:req.params.token})
+    .then(admin=> {
+      if(admin.status!="Admin"){
+        return res.status(404).json({ items: [{ message: 'no admin account'}]})
+      }
+      University.findOneAndUpdate(
+        {_id : id},
+        {$set:{
+          "name":req.body.uniName,
+          "suffixe_student":req.body.suffixe_student,
+          "suffixe_teacher": req.body.suffixe_teacher,
+          "image": req.body.image
+        }}
+      ).then(result => {
+        if (result) {
+            // Path updated successfully
+            return res.status(200).json({ items: [{ message : 'Change university !' }] });
+        } else {
+            // No path found with the provided id
+            return res.status(404).json({ items: [{ message: 'University not found' }] });
+        }
+    })
+    .catch(error => res.status(400).json({ error }));
+    });
+});
+
 app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous les parcours
   University.findOne({ suffixe_teacher: req.params.suffixe })
     .then(uni => {
@@ -317,9 +347,13 @@ app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous le
 });
 
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
+  console.log(req.body.mail)
+  console.log(req.body.uniName)
+  console.log(req.body.type)
+  console.log(req.body.name )
   User.findOneAndUpdate(
       {  mail: req.body.mail },
-      { $push: { uniName: req.body.uniName, path: { type: req.body.type ,name: req.body.name } } }, // Add the new path to the paths array
+      { $push: { uniName: req.body._id, path: { type: req.body.type ,name: req.body.name } } }, // Add the new path to the paths array
        { new: true } // Return the updated document instead of the original document
   )
       .then(user => {
