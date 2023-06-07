@@ -452,23 +452,28 @@ app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pou
 });
 
 
-app.get('/api/getCourses/:token', (req, res, next) => {  //on récupère tous les parcours
+app.get('/api/getCourses/:token', (req, res, next) => {
     User.findOne({ token: req.params.token })
         .then(user => {
             if (!user) {
-                return res.status(404).json({items : [{ statut : false, message: 'the user was not found' }]});
-
+                return res.status(404).json({ items: [{ status: false, message: 'The user was not found' }] });
             }
-            Cours.find({   uniName:user.uniName,pathType: user.path.type,pathName:user.path.name })
-                .then(cours => {
-                    return res.status(201).json( {items: [{ statut: true , cours: cours }]})
-                } )
-                .catch(error => res.status(500).json({error}))
+            University.findOne({ _id: user.uniName })
+                .then(uni => {
+                    if (!uni) {
+                        console.log("uni_not_found");
+                        return res.status(404).json({ items: [{ error: "UNI_NOT_FOUND" }] });
+                    }
+
+                    const path = uni.paths.find(path => path._id.toString() === user.path);
+                    const cours = path ? path.cours : [];
+
+                    return res.status(201).json({ items: [{ status: true, cours }] });
+                })
+                .catch(error => res.status(500).json({ error }));
         })
         .catch(error => res.status(500).json({ error }));
 });
-
-
 
 app.post('/api/setCourses/:token', (req, res, next) => {
     const id = new ObjectId(req.body._id);
