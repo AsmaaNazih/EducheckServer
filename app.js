@@ -546,6 +546,23 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 });
 
 
+app.post('/api/postCoursesStudent/:token', (req, res, next) => {
+  const id = new ObjectId(req.body._id);
+
+  User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
+      .then(user => {
+          if (!user) {
+            console.log("User nor Found")
+              return res.status(404).json({ items: [{ statut: false, message: 'User not Found' }] });
+          }
+
+          //TODO
+           // .then(uni => res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}))
+            //.catch(error => res.status(400).json({ error }));
+      });
+});
+
+
 
 app.get('/api/retrieveMessages/:token',
     (req, res, next) => {
