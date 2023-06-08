@@ -81,6 +81,11 @@ const usersSchema = mongoose.Schema({
 
     notes: [{
 
+        nameEtudiant:{
+          type:String,
+          required:false
+        },
+
         nameCours: {
             type: String,
             required: true
@@ -95,6 +100,11 @@ const usersSchema = mongoose.Schema({
         note: {
             type: String,
             required:true
+        },
+
+        nameProf: {
+            type: String,
+            required:false
         }
 
     }]

@@ -595,19 +595,53 @@ app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les
         .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
 
-app.get('/api/getNotes/:token', (req, res, next) => {  //on récupère tous les parcours
-    User.findOne({token:req.params.token})
+app.get('/api/getNotes/:token', (req, res, next) => {
+    User.findOne({ token: req.params.token })
         .then(user => {
             if (!user) {
-                return res.status(404).json({items: [{statut: false, message: 'User not found'}]});
+                return res.status(404).json({ items: [{ statut: false, message: 'User not found' }] });
             }
-            const notes = user.notes.find(notes => notes.nameCours === req.body.nameCours);
+            res.status(200).json({ items: [{ notes: user.notes }] });
+
+        })
+        .catch(error => res.status(404).json({ items: [{ statut: false }] }));
+});
+
+
+app.post('/api/addNotes/:token', (req, res, next) => {  //on récupère tous les parcours
+    User.findOneAndUpdate({token:req.params.token},
+    { $push: { notes: {note:req.body.note,type:req.body.type,nameCours:req.body.nameCours,nameEtudiant:req.body.mailEtudiant } } }, // Add the new path to the paths array
+    { new: true }
+    )
+        .then(user => {
+            if (!user|| user.status!=='Teacher') {
+                return res.status(404).json({items: [{statut: false, message: 'This user is not allowed to give marks!'}]});
+            }
+                /* req.body.mailEtudiant
+                   req.body.note
+                   req.body.type
+                   req.body.nameCours
+                 */
+            User.findOneAndUpdate(
+                {  mail:req.body.mailEtudiant },
+                { $push: { notes: {note:req.body.note,type:req.body.type,nameCours:req.body.nameCours,nameProf:user.mail } } }, // Add the new path to the paths array
+                { new: true }
+
+
+            )
+                .then(u => {
+                    if (!u) {
+                        return res.status(404).json({items : [{ statut : false }]});
+                    }
+
+                    res.status(200).json({items : [{ statut : true, notes: u.notes }]});
+                })
+                .catch(error => res.status(500).json({ error }));
 
 
         })
         .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
-
 
 
 module.exports = app;
