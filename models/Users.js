@@ -95,6 +95,11 @@ const usersSchema = mongoose.Schema({
         note: {
             type: String,
             required:true
+        },
+
+        nameProf: {
+            type: String,
+            required:true
         }
 
     }]
