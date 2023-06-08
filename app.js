@@ -495,7 +495,7 @@ app.get('/api/getCourses/:token', (req, res, next) => {
     User.findOne({ token: req.params.token })
         .then(user => {
             if (!user) {
-                return res.status(404).json({ items: [{ status: false, message: 'The user was not found' }] });
+                return res.status(404).json({ items: [{ statut: false, message: 'The user was not found' }] });
             }
             University.findOne({ _id: user.uniName })
                 .then(uni => {
@@ -520,55 +520,28 @@ app.post('/api/setCourses/:token', (req, res, next) => {
     User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
         .then(user => {
             if (!user) {
-                return res.status(404).json({ items: [{ status: false, message: 'User not Found' }] });
+              console.log("User nor Found")
+                return res.status(404).json({ items: [{ statut: false, message: 'User not Found' }] });
             }
 
             University.findOneAndUpdate(
                 {
-                    name: user.uniName,
-                    'paths.name': req.body.pathName ,// Search for the path by name
-                    'paths.type': req.body.pathType
+                    _id: user.uniName,
+                    'paths._id': id// Search for the path by name
                 },
                 {
                     $push: {
                         'paths.$.cours': {
                             name: req.body.name,
                             credit: req.body.credit,
-                            profName: user.lastName
+                            profName: req.body.profName
                         }
                     }
                 },
                 { new: true } // Return the updated document instead of the original document
             )
-                .then(uni => {
-                    // If the path doesn't exist, create a new path and add the course to it
-                    if (!uni) {
-                        return University.findOneAndUpdate(
-                            { name: user.uniName },
-                            {
-                                $push: {
-                                    paths: {
-                                        type: user.path.type,
-                                        name: user.path.name,
-                                        referant: user.mail,
-                                        cours: [
-                                            {
-                                                name: req.body.name,
-                                                credit: req.body.credit,
-                                                profName: user.lastName
-                                            }
-                                        ]
-                                    }
-                                }
-                            },
-                            { new: true } // Return the updated document instead of the original document
-                        );
-                    } else {
-                        return Promise.resolve(uni);
-                    }
-                })
-                .then(uni => res.status(201).json({ items: [{ status: true, cour: uni.paths }] }))
-                .catch(error => res.status(400).json({ error }));
+              .then(uni => res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}))
+              .catch(error => res.status(400).json({ error }));
         });
 });
 
