@@ -50,6 +50,7 @@ const usersSchema = mongoose.Schema({
             required:true
         },
         cours: [{
+            _id:false,
             idCour: {
                 type:String,
                 required: false
