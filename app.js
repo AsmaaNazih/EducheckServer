@@ -346,10 +346,8 @@ app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous le
 });
 
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
-  console.log(req.body.mail)
-  console.log(req.body.type)
-  console.log(req.body.uniName )
-
+  console.log(req.body._idUni)
+  console.log(req.body._idPath)
     University.findOne({_id:req.body._idUni })
         .then(uni => {
             if(!uni){
@@ -358,7 +356,7 @@ app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça
             }
             User.findOneAndUpdate(
                 {  mail: req.body.mail},
-                { $set: { uniName: req.body._idUni, path: uni.paths.find(p => p._id==req.body._idPath)._id  } }, // Add the new path to the paths array
+                { $push: { uniName: req.body._idUni, 'path.id': req.body._idPath  } }, // Add the new path to the paths array
                 { new: true } // Return the updated document instead of the original document
             )
                 .then(user => {
@@ -558,23 +556,26 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
             const email = emails[i];
             User.findOneAndUpdate(
               {
-                mail:email,
+                mail: email,
                 'path': req.body._idPath
               },
               {
                 $push: {
                   'path.$.cours': {
-                      cour: req.body._idCourse
+                    idCour: req.body._idCourse
                   }
                 }
               },
-              {new:true}
-              )
+              { new: true }
+            )
               .then(user => {
-                if(!user){
-                  return res.status(404).json({ items: [{ statut: false, message: 'Student not Found'}]})
+                if (!user) {
+                  return res.status(404).json({ statut: false, message: 'Student not Found' });
                 }
-
+                // Traiter la réponse de la mise à jour réussie
+              })
+              .catch(error => {
+                console.log(error);
               });
           }
           //TODO

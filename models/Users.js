@@ -43,10 +43,19 @@ const usersSchema = mongoose.Schema({
         required:true
     },
 
-    path: {
-        type: String,
-        required:false
-    },
+    path: [{
+        _id:false,
+        id:{
+            type: String,
+            required:true
+        },
+        cours: [{
+            idCour: {
+                type:String,
+                required: false
+            }
+        }]
+    }],
 
     uniName: {
         type:String,
