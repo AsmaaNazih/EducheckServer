@@ -2,39 +2,39 @@ const mongoose= require('mongoose');
 
 const usersSchema = mongoose.Schema({
 
-    ine : { 
-        type:String, 
+    ine : {
+        type:String,
         required: true
-     },
+    },
 
     firstName : {
-        type:String, 
-        required: true 
-     },
+        type:String,
+        required: true
+    },
 
     lastName : {
         type:String,
         required: true
-     },
+    },
 
     mail : {
-        type:String, 
+        type:String,
         required: true
     },
     password:{
         type:String,
         required: false
-    },  
+    },
     status: {
         type: String,
         enum: ['Teacher', 'Admin', 'Student'], // Add enum property
         required: true
-      },
+    },
 
     token: {
         type: String,
         required: false
-        
+
     },
 
     valide: {
@@ -50,6 +50,7 @@ const usersSchema = mongoose.Schema({
             required:true
         },
         cours: [{
+            _id:false,
             idCour: {
                 type:String,
                 required: false
@@ -92,8 +93,8 @@ const usersSchema = mongoose.Schema({
     notes: [{
 
         nameEtudiant:{
-          type:String,
-          required:false
+            type:String,
+            required:false
         },
 
         nameCours: {
