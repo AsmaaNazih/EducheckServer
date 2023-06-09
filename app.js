@@ -345,34 +345,40 @@ app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous le
     .catch(error => res.status(500).json({ error }));
 });
 
-app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
-  console.log(req.body._idUni)
-  console.log(req.body._idPath)
-    University.findOne({_id:req.body._idUni })
+app.put('/api/pathStudent/', (req, res, next) => {
+    const idUni = req.body._idUni;
+    const idPath = req.body._idPath;
+
+    University.findOne({ _id: idUni })
         .then(uni => {
-            if(!uni){
-                console.log("uni_not_found")
-                return res.status(404).json({items : [{ error : "UNI_NOT_FOUND" }]});
+            if (!uni) {
+                console.log("uni_not_found");
+                return res.status(404).json({ items: [{ error: "UNI_NOT_FOUND" }] });
             }
+
             User.findOneAndUpdate(
-                {  mail: req.body.mail},
-                { $push: { uniName: req.body._idUni, 'path.id': req.body._idPath  } }, // Add the new path to the paths array
-                { new: true } // Return the updated document instead of the original document
+                { mail: req.body.mail },
+                {
+                    $set: {
+                        uniName: idUni
+                    },
+                    $push: {
+                        'path': { id: idPath } // Add a new element to the path array with the provided id
+                    }
+                },
+                { new: true }
             )
                 .then(user => {
-
                     if (!user) {
-                        console.log("user_not_found")
-                        return res.status(404).json({items : [{ error : "USER_NOT_FOUND" }]});
-
+                        console.log("user_not_found");
+                        return res.status(404).json({ items: [{ error: "USER_NOT_FOUND" }] });
                     }
 
-                    res.status(200).json({items : [{ statut : true,message: 'path updated!'}]});
+                    res.status(200).json({ items: [{ status: true, message: 'path updated!' }] });
                 })
-                .catch(error => res.status(500).json({ error }))
-        .catch(error => res.status(500).json({ error }));
-
+                .catch(error => res.status(500).json({ error }));
         })
+        .catch(error => res.status(500).json({ error }));
 });
 
 app.put('/api/pathTeacher/:token', (req, res, next) => {  //on cherche un user par ça mail et son password
@@ -557,7 +563,7 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
             User.findOneAndUpdate(
               {
                 mail: email,
-                'path': req.body._idPath
+                'path.id': req.body._idPath
               },
               {
                 $push: {
@@ -606,7 +612,7 @@ app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les
     User.findOne({token:req.params.token})
         .then(user =>
             User.find({
-                'path': user.path,
+                'path': user.path.id,
                 uniName: user.uniName })
                 .then(users =>
                     res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
@@ -664,6 +670,8 @@ app.post('/api/addNotes/:token', (req, res, next) => {  //on récupère tous les
         })
         .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
+
+
 
 
 module.exports = app;

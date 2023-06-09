@@ -57,6 +57,7 @@ const usersSchema = mongoose.Schema({
         }]
     }],
 
+
     uniName: {
         type:String,
         required: false
