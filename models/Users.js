@@ -47,7 +47,7 @@ const usersSchema = mongoose.Schema({
         _id:false,
         id:{
             type: String,
-            required:true
+            required:false
         },
         cours: [{
             _id:false,
