@@ -143,16 +143,10 @@ app.post('/api/addUser', (req, res, next) => {  // requete post pour ajouter un 
       token: generateRandomString(20),
       valide: false || (req.body.status == 'Teacher')
     });
-    User.findOne({ token: token })
-    .then(user => {
-      if (user) {
-        // Si le token ne correspond à aucun administrateur, renvoyer une erreur
-        return res.status(401).json({ items : [{statut: false}] });
-      }
     user.save()
       .then(() => res.status(201).json({ items: [ {message : 'User enregistre !'} ] })) , sendEmail(user.mail,user.password,'first_password')
       .catch(error => res.status(400).json({ error }));
-  })});
+  });
 
 app.post('/api/addUni/:token', (req, res, next) => {  // requete post pour ajouter un User
 
@@ -233,7 +227,7 @@ app.put('/api/addUniPath/:token', (req, res, next) => {
 
 app.put('/api/editAcademicBackground/:token', (req, res, next) => {
     const token = req.params.token;
-    const id = new ObjectId(req.body._id);
+    const id = new ObjectId(req.body._idPath);
 
     // Vérifier si le token correspond à un administrateur valide
     User.findOne({ token: token })
@@ -271,7 +265,7 @@ app.put('/api/editAcademicBackground/:token', (req, res, next) => {
 
 app.delete('/api/deleteAcademicBackground/:token', (req, res, next) => {
   const token = req.params.token;
-    const id = new ObjectId(req.body._id);
+    const id = new ObjectId(req.body._idPath);
 
     // Vérifier si le token correspond à un administrateur valide
     User.findOne({ token: token })
@@ -312,8 +306,7 @@ app.delete('/api/deleteUni/:id', (req, res, next) => {
 });
 
 app.put('/api/editUniversity/:token',(req, res, next) => {
-  console.log(req.body._id + "ici")
-  const id = new ObjectId(req.body._id);
+  const id = new ObjectId(req.body._idUni);
   User.findOne({token:req.params.token})
     .then(admin=> {
       if(admin.status!="Admin"){
@@ -355,9 +348,9 @@ app.get('/api/getPaths/:suffixe', (req, res, next) => {  //on récupère tous le
 app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça mail et son password
   console.log(req.body.mail)
   console.log(req.body.type)
-  console.log(req.body.name )
+  console.log(req.body.uniName )
 
-    University.findOne({_id:req.body._id,'paths.name':req.body.name,'paths.type':req.body.type })
+    University.findOne({_id:req.body._idUni })
         .then(uni => {
             if(!uni){
                 console.log("uni_not_found")
@@ -365,7 +358,7 @@ app.put('/api/pathStudent/', (req, res, next) => {  //on cherche un user par ça
             }
             User.findOneAndUpdate(
                 {  mail: req.body.mail},
-                { $set: { uniName: req.body._id, path: uni.paths.find(p => p.name === req.body.name && p.type === req.body.type)._id  } }, // Add the new path to the paths array
+                { $set: { uniName: req.body._idUni, path: uni.paths.find(p => p._id==req.body._idPath)._id  } }, // Add the new path to the paths array
                 { new: true } // Return the updated document instead of the original document
             )
                 .then(user => {
@@ -389,7 +382,7 @@ app.put('/api/pathTeacher/:token', (req, res, next) => {  //on cherche un user p
     console.log(req.body.type)
     console.log(req.body.name )
 
-    University.findOne({_id:req.body._id,'paths.name':req.body.name,'paths.type':req.body.type })
+    University.findOne({_id:req.body._idUni,'paths.name':req.body.name,'paths.type':req.body.type })
         .then(uni => {
             if(!uni){
                 console.log("uni_not_found")
@@ -397,7 +390,7 @@ app.put('/api/pathTeacher/:token', (req, res, next) => {  //on cherche un user p
             }
             User.findOneAndUpdate(
                 {  mail: req.body.mail,status: 'Teacher',token:req.params.token },
-                { $push: { uniName: req.body._id, path: uni.paths.find(p => p.name === req.body.name && p.type === req.body.type)._id  } }, // Add the new path to the paths array
+                { $push: { uniName: req.body._idUni, path: uni.paths.find(p => p.name === req.body.name && p.type === req.body.type)._id  } }, // Add the new path to the paths array
                 { new: true } // Return the updated document instead of the original document
             )
                 .then(user => {
@@ -547,7 +540,8 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 
 
 app.post('/api/postCoursesStudent/:token', (req, res, next) => {
-  const id = new ObjectId(req.body._id);
+  const idCour = new ObjectId(req.body._idCourse);
+  const emails = JSON.parse(req.body.mail);
 
   User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
       .then(user => {
@@ -555,7 +549,30 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
             console.log("User nor Found")
               return res.status(404).json({ items: [{ statut: false, message: 'User not Found' }] });
           }
+          
+          for (let i = 0; i < emails.length; i++) {
+            const email = emails[i];
+            User.findOneAndUpdate(
+              {
+                mail:email,
+                'path': req.body._idPath
+              },
+              {
+                $push: {
+                  'path.$.cours': {
+                      _id: idCour 
+                  }
+                }
+              },
+              {new:true}
+              )
+              .then(user => {
+                if(!user){
+                  return res.status(404).json({ items: [{ statut: false, message: 'Student not Found'}]})
+                }
 
+              });
+          }
           //TODO
            // .then(uni => res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}))
             //.catch(error => res.status(400).json({ error }));
