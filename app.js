@@ -540,8 +540,12 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 
 
 app.post('/api/postCoursesStudent/:token', (req, res, next) => {
-  const idCour = new ObjectId(req.body._idCourse);
-  const emails = JSON.parse(req.body.mail);
+  const normalizeEmails = '["b@gmail.com", "c@gmail.com"]';
+  console.log(normalizeEmails)
+  console.log(req.body.mail)
+  console.log(req.body._idCourse)
+  console.log(req.body._idPath)
+  const emails = JSON.parse(normalizeEmails);
 
   User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
       .then(user => {
@@ -560,7 +564,7 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
               {
                 $push: {
                   'path.$.cours': {
-                      _id: idCour 
+                      cour: req.body._idCourse
                   }
                 }
               },
