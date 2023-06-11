@@ -198,6 +198,23 @@ app.get('/api/getUniversity/:token', (req, res, next) => {  //on récupère tous
         .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
 
+
+app.get('/api/getUsers/:token', (req, res, next) => {  //on récupère tous les parcours
+    User.findOne({token:req.params.token})
+        .then(user =>
+            User.find({ uniName: user.uniName , status:'Student'})
+                .then(u => {
+                    if (!user) {
+                        return res.status(404).json({items : [{ statut : false }]});
+
+                    }
+                    res.status(200).json({items : [u]});
+                })
+                .catch(error => res.status(500).json({ error }))
+        )
+        .catch(error => res.status(404).json({items : [{statut : false}]}))
+});
+
 app.use('/api/allUni',(req, res, next) => {   // pour avoir la liste des toutes les Universities
     University.find()
         .then(universities => res.status(200).json({items :  universities  }))
@@ -503,13 +520,15 @@ app.get('/api/getCourses/:token', (req, res, next) => {
 
                     const path = uni.paths.find(path => path._id.toString() === user.path[0].id);
                     const cours = path ? path.cours : [];
+                    console.log(cours)
 
-                    return res.status(201).json({ items: [{ cours }] });
+                    return res.status(201).json({ items: [{ cours: cours }] });
                 })
                 .catch(error => res.status(500).json({ error }));
         })
         .catch(error => res.status(500).json({ error }));
 });
+
 
 app.post('/api/setCourses/:token', (req, res, next) => {
     const id = new ObjectId(req.body._id);
@@ -544,7 +563,7 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 
 
 app.post('/api/postCoursesStudent/:token', (req, res, next) => {
-    const normalizeEmails = '["b@gmail.com", "c@gmail.com"]';
+    const normalizeEmails = '["d@gmail.com", "z@gmail.com"]';
     console.log(normalizeEmails)
     console.log(req.body.mail)
     console.log(req.body._idCourse)
