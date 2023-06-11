@@ -93,10 +93,14 @@ async function sendEmail(email, password, type) {
 
 
 
-app.use('/api/users', (req, res, next) => {   // pour avoir la liste des toutes les Users
-    User.find()
-        .then(users => res.status(200).json({items : [  users ]}))
-        .catch(error => res.status(400).json({ error }));
+app.use('/api/users/:token', (req, res, next) => {   // pour avoir la liste des toutes les Users
+
+    User.findOne({token:req.params.token})
+        .then(user => {
+            User.find({uniName:user.uniName, status:"Student"})
+                .then(users => res.status(200).json({items : users }))
+                .catch(error => res.status(400).json({ error }));
+        })
 });
 
 app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
@@ -520,15 +524,13 @@ app.get('/api/getCourses/:token', (req, res, next) => {
 
                     const path = uni.paths.find(path => path._id.toString() === user.path[0].id);
                     const cours = path ? path.cours : [];
-                    console.log(cours)
 
-                    return res.status(201).json({ items: [{ cours: cours }] });
+                    return res.status(201).json({ items: [{ cours }] });
                 })
                 .catch(error => res.status(500).json({ error }));
         })
         .catch(error => res.status(500).json({ error }));
 });
-
 
 app.post('/api/setCourses/:token', (req, res, next) => {
     const id = new ObjectId(req.body._id);
@@ -563,12 +565,7 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 
 
 app.post('/api/postCoursesStudent/:token', (req, res, next) => {
-    const normalizeEmails = '["d@gmail.com", "z@gmail.com"]';
-    console.log(normalizeEmails)
-    console.log(req.body.mail)
-    console.log(req.body._idCourse)
-    console.log(req.body._idPath)
-    const emails = JSON.parse(normalizeEmails);
+    const emails = req.body.mail;
 
     User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
         .then(user => {
@@ -593,19 +590,10 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
                     },
                     { new: true }
                 )
-                    .then(user => {
-                        if (!user) {
-                            return res.status(404).json({ statut: false, message: 'Student not Found' });
-                        }
-                        // Traiter la réponse de la mise à jour réussie
-                    })
                     .catch(error => {
                         console.log(error);
                     });
             }
-            //TODO
-            // .then(uni => res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}))
-            //.catch(error => res.status(400).json({ error }));
         });
 });
 
