@@ -121,9 +121,7 @@ const usersSchema = mongoose.Schema({
     }],
     justificatif: [{
 
-        _id:false,
-
-        profName:{
+        mailProf:{
             type:String,
             required:false
         },
@@ -139,13 +137,12 @@ const usersSchema = mongoose.Schema({
 
         },
 
-        id_justificatif: {
+        nameCours: {
             type: String,
             required:false
         },
-
-        nameCours: {
-            type: String,
+        mailStudent: {
+            type:String,
             required:false
         }
 

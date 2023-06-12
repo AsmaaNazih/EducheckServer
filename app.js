@@ -590,10 +590,19 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
                     },
                     { new: true }
                 )
+                    .then(user => {
+                        if (!user) {
+                            return res.status(404).json({ statut: false, message: 'Student not Found' });
+                        }
+                        // Traiter la réponse de la mise à jour réussie
+                    })
                     .catch(error => {
                         console.log(error);
                     });
             }
+            //TODO
+            // .then(uni => res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}))
+            //.catch(error => res.status(400).json({ error }));
         });
 });
 
@@ -617,16 +626,19 @@ app.get('/api/retrieveMessages/:token',
 
 app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les parcours
     User.findOne({token:req.params.token})
-        .then(user =>
+        .then(user => {
+            var status = (user.status === 'Teacher') ? 'Student' : 'Teacher';
             User.find({
                 'path.id': user.path[0].id,
-                uniName: user.uniName })
+                uniName: user.uniName,
+                status: status
+            })
                 .then(users =>
-                    res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
+                    res.status(200).json({items: [{mail: users.map(user => user.mail)}]})
                 )
 
 
-        )
+        })
         .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
 
@@ -640,6 +652,49 @@ app.get('/api/getNotes/:token', (req, res, next) => {
 
         })
         .catch(error => res.status(404).json({ items: [{ statut: false }] }));
+});
+
+
+app.get('/api/getAllJust/:token', (req, res, next) => {
+    User.findOne({ token: req.params.token ,status:'Student'})
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ items: [{ statut: false, message: 'User not found' }] });
+            }
+            res.status(200).json({ items: [{ justif: user.justificatif }] });
+
+        })
+        .catch(error => res.status(404).json({ items: [{ statut: false }] }));
+});
+
+app.post('/api/addAbs/:token', (req, res, next) => {  //on récupère tous les parcours
+    User.findOneAndUpdate({token:req.params.token},
+        { $push: { justificatif: {mailStudent:req.body.mailStudent,nameCours:req.body.nameCours,date:req.body.date } } }, // Add the new path to the paths array
+        { new: true }
+    )
+        .then(user => {
+            if (!user|| user.status!=='Teacher') {
+                return res.status(404).json({items: [{statut: false, message: 'This user is not allowed to give marks!'}]});
+            }
+            User.findOneAndUpdate(
+                {  mail:req.body.mailStudent },
+                { $push: { justificatif: {date:req.body.date,nameCours:req.body.nameCours,mailProf:user.mail } } }, // Add the new path to the paths array
+                { new: true }
+
+
+            )
+                .then(u => {
+                    if (!u) {
+                        return res.status(404).json({items : [{ statut : false }]});
+                    }
+
+                    res.status(200).json({items : [{ statut : true, justificatif: u.justificatif }]});
+                })
+                .catch(error => res.status(500).json({ error }));
+
+
+        })
+        .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
 
 
