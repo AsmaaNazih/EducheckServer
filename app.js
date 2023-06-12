@@ -577,20 +577,19 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
                         console.log(error);
                     });
             }
-        });
+            
+        }).then(res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}));
 });
 
 
 
 app.get('/api/retrieveMessages/:token',
     (req, res, next) => {
-        console.log(req.params.token);
         User.findOne({token: req.params.token})
             .then(user => {
                 if (!user) {
                     return res.status(404).json({items: [{statut: false, message: 'User not found'}]});
                 }
-                console.log(user.messages)
                 return res.status(200).json({items: [ { mailSenders :user.messages.map(message => message.mailSender),mailRecipients :user.messages.map(message => message.mailRecipient), messages: user.messages.map(message => message.message), statut: true} ]});
 
 
@@ -600,13 +599,24 @@ app.get('/api/retrieveMessages/:token',
 
 app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les parcours
     User.findOne({token:req.params.token})
-        .then(user =>
-            User.find({
-                'path.id': user.path[0].id,
-                uniName: user.uniName })
-                .then(users =>
-                    res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
-                )
+        .then(user =>{
+            if(user.status == 'Teacher' ){
+                User.find({
+                    uniName: user.uniName, 
+                    status: 'Student'})
+                    .then(users => console.log("ok" + users.map(user => user.mail)),
+                        res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
+                    )
+            }
+            else{
+                User.find({
+                    uniName: user.uniName, 
+                    status: 'Teacher'})
+                    .then(users =>
+                        res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
+                    )
+            }
+        }
 
 
         )
@@ -652,13 +662,13 @@ app.post('/api/addNotes/:token', (req, res, next) => {  //on récupère tous les
                         return res.status(404).json({items : [{ statut : false }]});
                     }
 
-                    res.status(200).json({items : [{ statut : true, notes: u.notes }]});
+                    res.status(200).json({items : [{ statut : true, message: 'Mark added!' }]});
                 })
                 .catch(error => res.status(500).json({ error }));
 
 
         })
-        .catch(error => res.status(404).json({items : [{statut : false}]}))
+        .catch(error => res.status(404).json({item : [{statut : false}]}))
 });
 
 
