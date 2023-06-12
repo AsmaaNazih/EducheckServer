@@ -118,6 +118,37 @@ const usersSchema = mongoose.Schema({
             required:false
         }
 
+    }],
+    justificatif: [{
+
+        _id:false,
+
+        profName:{
+            type:String,
+            required:false
+        },
+
+        date: {
+            type: String,
+            required: false
+        },
+
+        image: {
+            type: String,
+            required: false
+
+        },
+
+        id_justificatif: {
+            type: String,
+            required:false
+        },
+
+        nameCours: {
+            type: String,
+            required:false
+        }
+
     }]
 });
 
