@@ -120,7 +120,12 @@ const usersSchema = mongoose.Schema({
 
     }],
     justificatif: [{
+        _id:false,
 
+        id_j:{
+            type:String,
+            required:false
+        },
         mailProf:{
             type:String,
             required:false
@@ -143,6 +148,12 @@ const usersSchema = mongoose.Schema({
         },
         mailStudent: {
             type:String,
+            required:false
+        },
+
+        justifie: {
+            type: String,
+            enum: ['True', 'False'], //,
             required:false
         }
 

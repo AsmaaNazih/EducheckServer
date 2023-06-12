@@ -668,17 +668,18 @@ app.get('/api/getAllJust/:token', (req, res, next) => {
 });
 
 app.post('/api/addAbs/:token', (req, res, next) => {  //on récupère tous les parcours
+   const id_j= generateRandomString(10);
     User.findOneAndUpdate({token:req.params.token},
-        { $push: { justificatif: {mailStudent:req.body.mailStudent,nameCours:req.body.nameCours,date:req.body.date } } }, // Add the new path to the paths array
+        { $push: { justificatif: {id_j:id_j,mailStudent:req.body.mailStudent,nameCours:req.body.nameCours,date:req.body.date,justifie:'False' } } }, // Add the new path to the paths array
         { new: true }
     )
         .then(user => {
             if (!user|| user.status!=='Teacher') {
-                return res.status(404).json({items: [{statut: false, message: 'This user is not allowed to give marks!'}]});
+                return res.status(404).json({items: [{statut: false, message: 'This user is not allowed to give abs!'}]});
             }
             User.findOneAndUpdate(
                 {  mail:req.body.mailStudent },
-                { $push: { justificatif: {date:req.body.date,nameCours:req.body.nameCours,mailProf:user.mail } } }, // Add the new path to the paths array
+                { $push: { justificatif: {id_j:id_j,date:req.body.date,nameCours:req.body.nameCours,mailProf:user.mail,justifie:'False' } } }, // Add the new path to the paths array
                 { new: true }
 
 
@@ -697,6 +698,36 @@ app.post('/api/addAbs/:token', (req, res, next) => {  //on récupère tous les p
         .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
 
+app.post('/api/justify/:token', (req, res, next) => {
+    const { token } = req.params;
+    const { id_j,studentEmail, professorEmail, imagePath } = req.body;
+
+    User.findOneAndUpdate(
+        { token, mail: studentEmail },
+        { $set: { 'justificatif.$[teacher].justifie': 'False', 'justificatif.$[teacher].image': imagePath } },
+        { arrayFilters: [{ 'teacher.mailProf': professorEmail, 'teacher.id_j': id_j}] }
+    )
+        .then(student => {
+            if (!student) {
+                return res.status(404).json({ status: false, message: 'Student not found.' });
+            }
+
+            User.findOneAndUpdate(
+                { mail: professorEmail },
+                { $set: { 'justificatif.$[student].justifie': 'True', 'justificatif.$[student].image': imagePath } },
+                { arrayFilters: [{ 'student.mailStudent': studentEmail ,'student.id_j':id_j}] }
+            )
+                .then(teacher => {
+                    if (!teacher) {
+                        return res.status(404).json({ status: false, message: 'Teacher not found.' });
+                    }
+
+                    res.status(200).json({ status: true, message: 'Justification updated successfully.' });
+                })
+                .catch(error => res.status(500).json({ error }));
+        })
+        .catch(error => res.status(500).json({ error }));
+});
 
 app.post('/api/addNotes/:token', (req, res, next) => {  //on récupère tous les parcours
     User.findOneAndUpdate({token:req.params.token},
