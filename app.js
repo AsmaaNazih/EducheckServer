@@ -101,6 +101,7 @@ app.use('/api/users/:token', (req, res, next) => {   // pour avoir la liste des 
                 .then(users => res.status(200).json({items : users }))
                 .catch(error => res.status(400).json({ error }));
         })
+        .catch(error => res.status(500).json({error}));
 });
 
 app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
@@ -621,7 +622,7 @@ app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les
                 User.find({
                     uniName: user.uniName, 
                     status: 'Student'})
-                    .then(users => console.log("ok" + users.map(user => user.mail)),
+                    .then(users => 
                         res.status(200).json({items : [ { mail:users.map(user=> user.mail) } ] } )
                     )
             }
@@ -637,7 +638,7 @@ app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les
 
 
         )
-        .catch(error => res.status(404).json({items : [{statut : false}]}))
+        .catch(error => res.status(404).json({items : [{statut : false, message:'user not found'}]}))
 });
 
 app.get('/api/getNotes/:token', (req, res, next) => {
