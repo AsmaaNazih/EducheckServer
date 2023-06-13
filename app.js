@@ -523,8 +523,8 @@ app.get('/api/getCourses/:token', (req, res, next) => {
                     }
 
                     const path = uni.paths.find(path => path._id.toString() === user.path[0].id);
-                    const cours = path ? path.cours : [];
-
+                    const cours = path ? path.cours.filter(c => user.path[0].cours[0].idCour.includes(c._id)) : [];
+                    
                     return res.status(201).json({ items: [{ cours }] });
                 })
                 .catch(error => res.status(500).json({ error }));
@@ -606,40 +606,85 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
         });
 });
 
-app.post('/api/addAbs/:token', (req, res, next) => {  //on récupère tous les parcours
-    const id_j= generateRandomString(10);
+app.post('/api/addAbs/:token', async (req, res, next) => {
     const emails = req.body.mailStudents;
+    const promises = [];
+
     for (let i = 0; i < emails.length; i++) {
         const email = emails[i];
-        User.findOneAndUpdate({token:req.params.token},
-            { $push: { justificatif: {id_j:id_j,mailStudent:email,nameCours:req.body.nameCours,date:req.body.date,justifie:'False' } } }, // Add the new path to the paths array
+        let id_j = generateRandomString(20);
+        let isUnique = false;
+
+        while (!isUnique) {
+            try {
+                const existingJustificatif = await User.findOne({ 'justificatif.id_j': id_j });
+                if (!existingJustificatif) {
+                    isUnique = true;
+                } else {
+                    id_j = generateRandomString(20);
+                }
+            } catch (error) {
+                return res.status(500).json({ items: [{ statut: false, message: 'Error id_j!' }] });
+            }
+        }
+
+        const updatePromise = User.findOneAndUpdate(
+            { token: req.params.token },
+            {
+                $push: {
+                    justificatif: {
+                        id_j: id_j,
+                        mailStudent: email,
+                        nameCours: req.body.nameCours,
+                        date: req.body.date,
+                        justifie: 'False'
+                    }
+                }
+            },
             { new: true }
         )
             .then(user => {
-                if (!user|| user.status!=='Teacher') {
-                    return res.status(404).json({items: [{statut: false, message: 'This user is not allowed to give abs!'}]});
+                if (!user || user.status !== 'Teacher') {
+                    return Promise.reject({ status: 404, message: 'This user is not allowed to give abs!' });
                 }
-                User.findOneAndUpdate(
-                    {  mail: email,status: 'Student' },
-                    { $push: { justificatif: {id_j:id_j,date:req.body.date,nameCours:req.body.nameCours,mailProf:user.mail,justifie:'False' } } }, // Add the new path to the paths array
-                    { new: true }
-    
-    
-                )
-                    .then(u => {
-                        if (!u) {
-                            return res.status(404).json({items : [{ statut : false }]});
+
+                return User.findOneAndUpdate(
+                    { mail: email, status: 'Student' },
+                    {
+                        $push: {
+                            justificatif: {
+                                id_j: id_j,
+                                date: req.body.date,
+                                nameCours: req.body.nameCours,
+                                mailProf: user.mail,
+                                justifie: 'False'
+                            }
                         }
-    
-                        res.status(200).json({items : [{ statut : true, justificatif: u.justificatif }]});
-                    })
-                    .catch(error => res.status(500).json({ error }));
-    
-    
+                    },
+                    { new: true }
+                );
             })
-            .catch(error => res.status(404).json({items : [{statut : false}]}))
+            .catch(error => Promise.reject(error));
+
+        promises.push(updatePromise);
+    }
+
+    try {
+        const results = await Promise.all(promises);
+
+        const hasError = results.some(result => !result);
+        if (hasError) {
+            return res.status(404).json({ items: [{ statut: false }] });
         }
- });
+
+        res.status(200).json({ items: [{ statut: true, justificatif: results[0].justificatif }] });
+    } catch (error) {
+        const status = error.status || 500;
+        const message = error.message || 'An error occurred';
+        res.status(status).json({ error: message });
+    }
+});
+
 
 
 
@@ -707,7 +752,7 @@ app.post('/api/justify/:token', (req, res, next) => {
     const { id_j,studentEmail, professorEmail, imagePath } = req.body;
 
     User.findOneAndUpdate(
-        { token, mail: studentEmail },
+        { token:token, mail: studentEmail },
         { $set: { 'justificatif.$[teacher].justifie': 'False', 'justificatif.$[teacher].image': imagePath } },
         { arrayFilters: [{ 'teacher.mailProf': professorEmail, 'teacher.id_j': id_j}] }
     )
