@@ -605,6 +605,41 @@ app.post('/api/postCoursesStudent/:token', (req, res, next) => {
         }).then(res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}));
 });
 
+app.post('/api/addAbs/:token', (req, res, next) => {  //on récupère tous les parcours
+    const id_j= generateRandomString(10);
+    const emails = req.body.mailStudents;
+    for (let i = 0; i < emails.length; i++) {
+        const email = emails[i];
+        User.findOneAndUpdate({token:req.params.token},
+            { $push: { justificatif: {id_j:id_j,mailStudent:email,nameCours:req.body.nameCours,date:req.body.date,justifie:'False' } } }, // Add the new path to the paths array
+            { new: true }
+        )
+            .then(user => {
+                if (!user|| user.status!=='Teacher') {
+                    return res.status(404).json({items: [{statut: false, message: 'This user is not allowed to give abs!'}]});
+                }
+                User.findOneAndUpdate(
+                    {  mail: email,status: 'Student' },
+                    { $push: { justificatif: {id_j:id_j,date:req.body.date,nameCours:req.body.nameCours,mailProf:user.mail,justifie:'False' } } }, // Add the new path to the paths array
+                    { new: true }
+    
+    
+                )
+                    .then(u => {
+                        if (!u) {
+                            return res.status(404).json({items : [{ statut : false }]});
+                        }
+    
+                        res.status(200).json({items : [{ statut : true, justificatif: u.justificatif }]});
+                    })
+                    .catch(error => res.status(500).json({ error }));
+    
+    
+            })
+            .catch(error => res.status(404).json({items : [{statut : false}]}))
+        }
+ });
+
 
 
 app.get('/api/retrieveMessages/:token',
@@ -670,37 +705,6 @@ app.get('/api/getAllJust/:token', (req, res, next) => {
 
         })
         .catch(error => res.status(404).json({ items: [{ statut: false }] }));
-});
-
-app.post('/api/addAbs/:token', (req, res, next) => {  //on récupère tous les parcours
-   const id_j= generateRandomString(10);
-    User.findOneAndUpdate({token:req.params.token},
-        { $push: { justificatif: {id_j:id_j,mailStudent:req.body.mailStudent,nameCours:req.body.nameCours,date:req.body.date,justifie:'False' } } }, // Add the new path to the paths array
-        { new: true }
-    )
-        .then(user => {
-            if (!user|| user.status!=='Teacher') {
-                return res.status(404).json({items: [{statut: false, message: 'This user is not allowed to give abs!'}]});
-            }
-            User.findOneAndUpdate(
-                {  mail:req.body.mailStudent },
-                { $push: { justificatif: {id_j:id_j,date:req.body.date,nameCours:req.body.nameCours,mailProf:user.mail,justifie:'False' } } }, // Add the new path to the paths array
-                { new: true }
-
-
-            )
-                .then(u => {
-                    if (!u) {
-                        return res.status(404).json({items : [{ statut : false }]});
-                    }
-
-                    res.status(200).json({items : [{ statut : true, justificatif: u.justificatif }]});
-                })
-                .catch(error => res.status(500).json({ error }));
-
-
-        })
-        .catch(error => res.status(404).json({items : [{statut : false}]}))
 });
 
 app.post('/api/justify/:token', (req, res, next) => {
