@@ -710,14 +710,15 @@ app.get('/api/getAllJust/:token', (req, res, next) => {
 app.post('/api/justify/:token', (req, res, next) => {
     const { token } = req.params;
     const { id_j,studentEmail, professorEmail, imagePath } = req.body;
-
+    console.log(token)
     User.findOneAndUpdate(
-        { token, mail: studentEmail },
+        { token:token},
         { $set: { 'justificatif.$[teacher].justifie': 'False', 'justificatif.$[teacher].image': imagePath } },
         { arrayFilters: [{ 'teacher.mailProf': professorEmail, 'teacher.id_j': id_j}] }
     )
         .then(student => {
             if (!student) {
+                console.log("ici")
                 return res.status(404).json({ status: false, message: 'Student not found.' });
             }
 
@@ -728,6 +729,7 @@ app.post('/api/justify/:token', (req, res, next) => {
             )
                 .then(teacher => {
                     if (!teacher) {
+                        console.log("là")
                         return res.status(404).json({ status: false, message: 'Teacher not found.' });
                     }
 
