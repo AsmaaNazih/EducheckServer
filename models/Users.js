@@ -86,6 +86,11 @@ const usersSchema = mongoose.Schema({
         date: {
             type: Date,
             required: false
+        },
+        received: {
+            type:String,
+            eunm:['true','false'],
+            required: false
         }
 
     }],
