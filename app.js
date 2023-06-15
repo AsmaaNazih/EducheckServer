@@ -99,6 +99,7 @@ app.use('/api/users/:token', (req, res, next) => {   // pour avoir la liste des 
                 .then(users => res.status(200).json({items : users }))
                 .catch(error => res.status(400).json({ error }));
         })
+        .catch(error => res.status(500).json({error}));
 });
 
 app.get('/api/findUser/:mail/:password', (req, res, next) => {  //on cherche un user par ça mail et son password
@@ -562,6 +563,7 @@ app.get('/api/getCourses/:token', (req, res, next) => {
 
 app.post('/api/setCourses/:token', (req, res, next) => {
     const id = new ObjectId(req.body._id);
+
     User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
         .then(user => {
             if (!user) {
@@ -591,47 +593,55 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 });
 
 
-app.post('/api/postCoursesStudent/:token', (req, res, next) => {
-    const emails = req.body.mail;
+app.post('/api/postCoursesStudent/:token', async (req, res, next) => {
+    try {
+        const emails = req.body.mail;
+        console.log(req.body._idCourse)
+        console.log("path id: "+req.body._idPath)
 
-    User.findOne({ $and: [{ token: req.params.token}, {status: 'Teacher' }] })
-        .then(user => {
-            if (!user) {
-                console.log("User nor Found")
-                return res.status(404).json({ items: [{ statut: false, message: 'User not Found' }] });
-            }
+        const teacher = await User.findOne({ token: req.params.token, status: 'Teacher' });
+        if (!teacher) {
+            console.log("User not Found");
+            return res.status(404).json({ items: [{ status: false, message: 'User not Found' }] });
+        }
 
-            for (let i = 0; i < emails.length; i++) {
-                const email = emails[i];
-                User.findOneAndUpdate(
-                    {
-                        mail: email,
-                        'path.id': req.body._idPath
-                    },
-                    {
-                        $push: {
-                            'path.$.cours': {
-                                idCour: req.body._idCourse
-                            }
+        const promises = emails.map(async (email) => {
+            const student = await User.findOneAndUpdate(
+                {
+                    mail: email,
+                    'path': {
+                        $elemMatch: {
+                            id: req.body._idPath
                         }
-                    },
-                    { new: true }
-                )
-                    .then(user => {
-                        if (!user) {
-                            return res.status(404).json({ statut: false, message: 'Student not Found' });
+                    }
+                },
+                {
+                    $push: {
+                        'path.$.cours': {
+                            idCour: req.body._idCourse
                         }
-                        // Traiter la réponse de la mise à jour réussie
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
+                    }
+                },
+                { new: true }
+            );
+
+            if (!student) {
+                console.log(email + " Student not Found");
+            } else {
+                console.log(student.name + " ajout " + req.body._idCourse);
             }
-            //TODO
-            // .then(uni => res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}))
-            //.catch(error => res.status(400).json({ error }));
         });
+
+        await Promise.all(promises);
+
+        return res.status(201).json({ items: [{ status: true, message: 'Course Added!' }] });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ items: [{ status: false, message: 'Internal Server Error' }] });
+    }
 });
+
+
 
 
 app.post('/api/addAbs/:token', async (req, res, next) => {
@@ -770,7 +780,7 @@ app.get('/api/getNotes/:token', (req, res, next) => {
 
 
 app.get('/api/getAllJust/:token', (req, res, next) => {
-    User.findOne({ token: req.params.token ,status:'Student'})
+    User.findOne({ token: req.params.token })
         .then(user => {
             if (!user) {
                 return res.status(404).json({ items: [{ statut: false, message: 'User not found' }] });
@@ -784,7 +794,7 @@ app.get('/api/getAllJust/:token', (req, res, next) => {
 app.post('/api/justify/:token', (req, res, next) => {
     const { token } = req.params;
     const { id_j,studentEmail, professorEmail, imagePath } = req.body;
-
+    console.log(token)
     User.findOneAndUpdate(
         { token:token },
         { $set: { 'justificatif.$[teacher].justifie': 'False', 'justificatif.$[teacher].image': imagePath } },
@@ -792,6 +802,7 @@ app.post('/api/justify/:token', (req, res, next) => {
     )
         .then(student => {
             if (!student) {
+                console.log("ici")
                 console.log('user not found')
                 return res.status(404).json({items: [{ status: false, message: 'Student not found.' }]});
             }
@@ -803,6 +814,7 @@ app.post('/api/justify/:token', (req, res, next) => {
             )
                 .then(teacher => {
                     if (!teacher) {
+                        console.log("là")
                         return res.status(404).json({items: [{ status: false, message: 'Teacher not found.' }]});
                     }
                     console.log(teacher)
@@ -817,8 +829,10 @@ app.post('/api/justifyProf/:token', (req, res, next) => {
     const { token } = req.params;
     const { id_j,studentEmail } = req.body;
 
-    User.findOne(
-        { token:token , status: 'Teacher'}
+    User.findOneAndUpdate(
+        { token:token , status: 'Teacher'},
+        { $set: { 'justificatif.$[teacher].justifie': 'Accept'  } },
+        { arrayFilters: [{ 'teacher.id_j':id_j}] }
     )
         .then(teacher => {
             if(!teacher){
@@ -826,18 +840,18 @@ app.post('/api/justifyProf/:token', (req, res, next) => {
             }
 
             User.findOneAndUpdate(
-                { mail: studentEmail },
-                { $set: { 'justificatif.$[teacher].justifie': 'True'  } },
-                { arrayFilters: [{ 'teacher.id_j':id_j}] }
-            )
+                    { mail: studentEmail },
+                    { $set: { 'justificatif.$[teacher].justifie': 'True'  } },
+                    { arrayFilters: [{ 'teacher.id_j':id_j}] }
+                )
                 .then(student => {
-                    if (!student) {
-                        return res.status(404).json({items: [{ status: false, message: 'Student not found.' }]});
-                    }
+                        if (!student) {
+                                return res.status(404).json({items: [{ status: false, message: 'Student not found.' }]});
+                        }
 
-                    res.status(200).json({items: [{ status: true, message: 'Justification updated successfully.' }]});
-                })
-                .catch(error => res.status(500).json({ error }));
+                            res.status(200).json({items: [{ status: true, message: 'Justification updated successfully.' }]});
+                        })
+                        .catch(error => res.status(500).json({ error }));
         })
 
 });
@@ -868,13 +882,13 @@ app.post('/api/addNotes/:token', (req, res, next) => {  //on récupère tous les
                         return res.status(404).json({items : [{ statut : false }]});
                     }
 
-                    res.status(200).json({items : [{ statut : true, notes: u.notes }]});
+                    res.status(200).json({items : [{ statut : true, message: 'Mark added!' }]});
                 })
                 .catch(error => res.status(500).json({ error }));
 
 
         })
-        .catch(error => res.status(404).json({items : [{statut : false}]}))
+        .catch(error => res.status(404).json({item : [{statut : false}]}))
 });
 
 
