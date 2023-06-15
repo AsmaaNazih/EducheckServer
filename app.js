@@ -480,7 +480,7 @@ app.get('/api/sendToken/:token',(req,res,next) => {
 app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pour ajouter un User
     User.findOneAndUpdate({
             $and:[ {token: req.params.token, mail: req.body.mailSender } ] },
-        { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date,received:'false'     } } }, // Add the new path to the paths array
+        { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date,received:'true'     } } }, // Add the new path to the paths array
         { new: true } // Return the updated document instead of the original document
 
     )
@@ -491,7 +491,7 @@ app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pou
 
             User.findOneAndUpdate(
                 { mail: req.body.mailRecipient } ,
-                { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date,received:'true'    } } }, // Add the new path to the paths array
+                { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date,received:'false'    } } }, // Add the new path to the paths array
                 { new: true } // Return the updated document instead of the original document
 
             )
@@ -705,38 +705,32 @@ app.get('/api/retrieveMessages/:token',
             .catch(error => res.status(404).json({items : [{statut : false}]}))
     });
 
-    app.get('/api/sendMexTo/:token', (req, res, next) => {
-        // Route handler for GET request to '/api/sendMexTo/:token'
-        // req: Request object containing the request data
-        // res: Response object for sending the response
-        // next: Next function to call the next middleware
-      
-        User.findOne({ token: req.params.token })
-          .then(user => {
-            var status = user.status === 'Teacher' ? 'Student' : 'Teacher';
-            User.find({
-              'path.id': user.path[0].id,
-              uniName: user.uniName,
-              status: status
+    app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les parcours
+        User.findOne({token:req.params.token})
+            .then(user => {
+                var status = (user.status === 'Teacher') ? 'Student' : 'Teacher';
+                User.find({
+                    'path.id': user.path[0].id,
+                    uniName: user.uniName,
+                    status: status
+                })
+                .then(users => {
+                    var rec = users.map(user => {
+                      if (user.messages.length > 0) {
+                        console.log(user.messages.length)
+                        console.log(user.messages[user.messages.length - 1].received)
+                        return user.messages[user.messages.length - 1].received;
+                      }
+                      return 'false';
+                    });
+
+                        res.status(200).json({items: [{mail: users.map(user => user.mail)},{received:rec}]})
+                     } )
+    
+    
             })
-              .then(users => {
-                const mailList = users.map(user => user.mail);
-                const receivedList = users.map(user => user.messages[user.messages.length - 1].received);
-      
-                res.status(200).json({ items: { mail: mailList, received: receivedList } });
-              })
-              .catch(error => {
-                console.error('Error:', error);
-                res.status(500).json({
-                  items: [{ status: false, message: 'Internal Server Error' }]
-                });
-              });
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            res.status(404).json({ items: [{ status: false }] });
-          });
-      });
+            .catch(error => res.status(404).json({items : [{statut : false}]}))
+    });
       
 app.get('/api/getNotes/:token', (req, res, next) => {
     User.findOne({ token: req.params.token })
