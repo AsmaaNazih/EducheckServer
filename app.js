@@ -709,6 +709,7 @@ app.get('/api/retrieveMessages/:token',
         User.findOne({token:req.params.token})
             .then(user => {
                 var status = (user.status === 'Teacher') ? 'Student' : 'Teacher';
+
                 User.find({
                     'path.id': user.path[0].id,
                     uniName: user.uniName,
