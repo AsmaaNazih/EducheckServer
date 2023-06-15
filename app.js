@@ -707,6 +707,7 @@ app.get('/api/retrieveMessages/:token',
         User.findOne({token:req.params.token})
             .then(user => {
                 var status = (user.status === 'Teacher') ? 'Student' : 'Teacher';
+
                 User.find({
                     'path.id': user.path[0].id,
                     uniName: user.uniName,
@@ -762,7 +763,7 @@ app.post('/api/justify/:token', (req, res, next) => {
     User.findOneAndUpdate(
         { token:token },
         { $set: { 'justificatif.$[teacher].justifie': 'False', 'justificatif.$[teacher].image': imagePath } },
-        { arrayFilters: [{ 'teacher.mailProf': professorEmail, 'teacher.id_j': id_j}] }
+        { arrayFilters: [{ 'teacher.id_j': id_j}] }
     )
         .then(student => {
             if (!student) {
@@ -770,18 +771,18 @@ app.post('/api/justify/:token', (req, res, next) => {
                 console.log('user not found')
                 return res.status(404).json({items: [{ status: false, message: 'Student not found.' }]});
             }
-
+            console.log(student)
             User.findOneAndUpdate(
                 { mail: professorEmail },
                 { $set: { 'justificatif.$[student].justifie': 'True', 'justificatif.$[student].image': imagePath } },
-                { arrayFilters: [{ 'student.mailStudent': studentEmail ,'student.id_j':id_j}] }
+                { arrayFilters: [{ 'student.id_j':id_j}] }
             )
                 .then(teacher => {
                     if (!teacher) {
                         console.log("là")
                         return res.status(404).json({items: [{ status: false, message: 'Teacher not found.' }]});
                     }
-
+                    console.log(teacher)
                     res.status(200).json({items: [{ status: true, message: 'Justification updated successfully.' }]});
                 })
                 .catch(error => res.status(500).json({ error }));
@@ -793,8 +794,10 @@ app.post('/api/justifyProf/:token', (req, res, next) => {
     const { token } = req.params;
     const { id_j,studentEmail } = req.body;
 
-    User.findOne(
-        { token:token , status: 'Teacher'}
+    User.findOneAndUpdate(
+        { token:token , status: 'Teacher'},
+        { $set: { 'justificatif.$[teacher].justifie': 'Accept'  } },
+        { arrayFilters: [{ 'teacher.id_j':id_j}] }
     )
         .then(teacher => {
             if(!teacher){

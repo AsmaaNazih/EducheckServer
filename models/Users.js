@@ -158,7 +158,7 @@ const usersSchema = mongoose.Schema({
 
         justifie: {
             type: String,
-            enum: ['True', 'False'], //,
+            enum: ['True', 'False','Accept'], //,
             required:false
         }
 
