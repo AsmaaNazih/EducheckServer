@@ -565,45 +565,54 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 });
 
 
-app.post('/api/postCoursesStudent/:token', (req, res, next) => {
-    const emails = req.body.mail;
+app.post('/api/postCoursesStudent/:token', async (req, res, next) => {
+    try {
+        const emails = req.body.mail;
+        console.log(req.body._idCourse)
+        console.log("path id: "+req.body._idPath)
 
-    User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
-        .then(user => {
-            if (!user) {
-                console.log("User nor Found")
-                return res.status(404).json({ items: [{ statut: false, message: 'User not Found' }] });
-            }
+        const teacher = await User.findOne({ token: req.params.token, status: 'Teacher' });
+        if (!teacher) {
+            console.log("User not Found");
+            return res.status(404).json({ items: [{ status: false, message: 'User not Found' }] });
+        }
 
-            for (let i = 0; i < emails.length; i++) {
-                const email = emails[i];
-                User.findOneAndUpdate(
-                    {
-                        mail: email,
-                        'path.id': req.body._idPath
-                    },
-                    {
-                        $push: {
-                            'path.$.cours': {
-                                idCour: req.body._idCourse
-                            }
+        const promises = emails.map(async (email) => {
+            const student = await User.findOneAndUpdate(
+                {
+                    mail: email,
+                    'path': {
+                        $elemMatch: {
+                            id: req.body._idPath
                         }
-                    },
-                    { new: true }
-                )
-                    .then(user => {
-                        if (!user) {
-                            return res.status(404).json({ statut: false, message: 'Student not Found' });
+                    }
+                },
+                {
+                    $push: {
+                        'path.$.cours': {
+                            idCour: req.body._idCourse
                         }
-                        // Traiter la réponse de la mise à jour réussie
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
+                    }
+                },
+                { new: true }
+            );
+
+            if (!student) {
+                console.log(email + " Student not Found");
+            } else {
+                console.log(student.name + " ajout " + req.body._idCourse);
             }
-            
-        }).then(res.status(201).json({ items : [{ statut : true,message: 'Course Added!'}]}));
+        });
+
+        await Promise.all(promises);
+
+        return res.status(201).json({ items: [{ status: true, message: 'Course Added!' }] });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ items: [{ status: false, message: 'Internal Server Error' }] });
+    }
 });
+
 
 
 
