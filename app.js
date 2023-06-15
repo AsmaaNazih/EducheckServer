@@ -32,8 +32,6 @@ app.use((req, res, next) => {
 
 const User=require('./models/Users');
 const University = require('./models/University');
-const Message = require('./models/Message');
-const Cours = require('./models/Cours');
 const { ObjectId } = require('mongodb');
 
 
@@ -475,6 +473,27 @@ app.get('/api/sendToken/:token',(req,res,next) => {
 
 })
 
+app.post('/api/recMex/:token', (req, res, next) => {
+    const token = req.params.token;
+    const mailSender = req.body.mailSender;
+
+    User.findOneAndUpdate(
+        { token: token },
+        { $pull: { 'rec': { mail: mailSender } } },
+        { new: true }
+    )
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ items:[ {status: false, error: 'User not found' }] });
+            }
+            res.status(200).json({ items:[{ status: true, message: 'Mails removed successfully' }]});
+        })
+        .catch(error => {
+            console.log(error);
+            res.status(500).json({items:[{ status: false, error: 'Failed to remove mails' }]});
+        });
+});
+
 
 
 app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pour ajouter un User
@@ -488,10 +507,19 @@ app.post('/api/sendMessageTo/:token', (req, res, next) => {  // requete post pou
             if(!user) {
                 return res.status(404).json({items: [{ statut: false, message: 'User not Found' }]});
             }
-
+            console.log(req.body.mailRecipient)
             User.findOneAndUpdate(
                 { mail: req.body.mailRecipient } ,
-                { $push: { messages: {mailRecipient: req.body.mailRecipient ,mailSender: req.body.mailSender, message:req.body.message,date: req.body.date,received:'false'    } } }, // Add the new path to the paths array
+                {$push: {
+                        messages: {
+                            mailRecipient: req.body.mailRecipient,
+                            mailSender: req.body.mailSender,
+                            message: req.body.message,
+                            date: req.body.date,
+                            received: 'false'
+                        },
+                        rec: { mail: req.body.mailSender }
+                    } }, // Add the new path to the paths array
                 { new: true } // Return the updated document instead of the original document
 
             )
@@ -524,7 +552,7 @@ app.get('/api/getCourses/:token', (req, res, next) => {
 
                     const path = uni.paths.find(path => path._id.toString() === user.path[0].id);
                     const cours = path ? path.cours.filter(c => user.path[0].cours[0].idCour.includes(c._id)) : [];
-                    
+
                     return res.status(201).json({ items: [{ cours }] });
                 })
                 .catch(error => res.status(500).json({ error }));
@@ -534,7 +562,6 @@ app.get('/api/getCourses/:token', (req, res, next) => {
 
 app.post('/api/setCourses/:token', (req, res, next) => {
     const id = new ObjectId(req.body._id);
-
     User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
         .then(user => {
             if (!user) {
@@ -567,7 +594,7 @@ app.post('/api/setCourses/:token', (req, res, next) => {
 app.post('/api/postCoursesStudent/:token', (req, res, next) => {
     const emails = req.body.mail;
 
-    User.findOne({ $and: [{ token: req.params.token, status: 'Teacher' }] })
+    User.findOne({ $and: [{ token: req.params.token}, {status: 'Teacher' }] })
         .then(user => {
             if (!user) {
                 console.log("User nor Found")
@@ -698,41 +725,37 @@ app.get('/api/retrieveMessages/:token',
                     return res.status(404).json({items: [{statut: false, message: 'User not found'}]});
                 }
                 console.log(user.messages)
-                return res.status(200).json({items: [ { mailSenders :user.messages.map(message => message.mailSender),mailRecipients :user.messages.map(message => message.mailRecipient), messages: user.messages.map(message => message.message), statut: true} ]});
+                return res.status(200).json({items: [ { mailSenders :user.messages.map(message => message.mailSender),mailRecipients :user.messages.map(message => message.mailRecipient), messages: user.messages.map(message => message.message), ids:user.messages.map(message => message._id), statut: true} ]});
 
 
             })
             .catch(error => res.status(404).json({items : [{statut : false}]}))
     });
 
-    app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les parcours
-        User.findOne({token:req.params.token})
-            .then(user => {
-                var status = (user.status === 'Teacher') ? 'Student' : 'Teacher';
+app.get('/api/sendMexTo/:token', (req, res, next) => {  //on récupère tous les parcours
+    User.findOne({token:req.params.token})
+        .then(user => {
+            var status = (user.status === 'Teacher') ? 'Student' : 'Teacher';
 
-                User.find({
-                    'path.id': user.path[0].id,
-                    uniName: user.uniName,
-                    status: status
-                })
+            User.find({
+                'path.id': user.path[0].id,
+                uniName: user.uniName,
+                status: status
+            })
                 .then(users => {
-                    var rec = users.map(user => {
-                      if (user.messages.length > 0) {
-                        console.log(user.messages.length)
-                        console.log(user.messages[user.messages.length - 1].received)
-                        return user.messages[user.messages.length - 1].received;
-                      }
-                      return 'false';
-                    });
 
-                        res.status(200).json({items: [{mail: users.map(user => user.mail)},{received:rec}]})
-                     } )
-    
-    
-            })
-            .catch(error => res.status(404).json({items : [{statut : false}]}))
-    });
-      
+
+                    res.status(200).json({items: [{mail: users.map(user => user.mail)},{received:user.rec.map(r=> r.mail)}]})
+                } )
+
+
+        })
+        .catch(error => res.status(404).json({items : [{statut : false}]}))
+});
+
+
+
+
 app.get('/api/getNotes/:token', (req, res, next) => {
     User.findOne({ token: req.params.token })
         .then(user => {
@@ -794,10 +817,8 @@ app.post('/api/justifyProf/:token', (req, res, next) => {
     const { token } = req.params;
     const { id_j,studentEmail } = req.body;
 
-    User.findOneAndUpdate(
-        { token:token , status: 'Teacher'},
-        { $set: { 'justificatif.$[teacher].justifie': 'Accept'  } },
-        { arrayFilters: [{ 'teacher.id_j':id_j}] }
+    User.findOne(
+        { token:token , status: 'Teacher'}
     )
         .then(teacher => {
             if(!teacher){
@@ -805,18 +826,18 @@ app.post('/api/justifyProf/:token', (req, res, next) => {
             }
 
             User.findOneAndUpdate(
-                    { mail: studentEmail },
-                    { $set: { 'justificatif.$[teacher].justifie': 'True'  } },
-                    { arrayFilters: [{ 'teacher.id_j':id_j}] }
-                )
+                { mail: studentEmail },
+                { $set: { 'justificatif.$[teacher].justifie': 'True'  } },
+                { arrayFilters: [{ 'teacher.id_j':id_j}] }
+            )
                 .then(student => {
-                        if (!student) {
-                                return res.status(404).json({items: [{ status: false, message: 'Student not found.' }]});
-                        }
+                    if (!student) {
+                        return res.status(404).json({items: [{ status: false, message: 'Student not found.' }]});
+                    }
 
-                            res.status(200).json({items: [{ status: true, message: 'Justification updated successfully.' }]});
-                        })
-                        .catch(error => res.status(500).json({ error }));
+                    res.status(200).json({items: [{ status: true, message: 'Justification updated successfully.' }]});
+                })
+                .catch(error => res.status(500).json({ error }));
         })
 
 });

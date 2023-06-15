@@ -124,6 +124,14 @@ const usersSchema = mongoose.Schema({
         }
 
     }],
+    rec: [{
+        _id:false,
+        mail:{
+            type:String,
+            required:false
+        }
+    }]
+    ,
     justificatif: [{
         _id:false,
 
