@@ -794,8 +794,10 @@ app.post('/api/justifyProf/:token', (req, res, next) => {
     const { token } = req.params;
     const { id_j,studentEmail } = req.body;
 
-    User.findOne(
-        { token:token , status: 'Teacher'}
+    User.findOneAndUpdate(
+        { token:token , status: 'Teacher'},
+        { $set: { 'justificatif.$[teacher].justifie': 'Accept'  } },
+        { arrayFilters: [{ 'teacher.id_j':id_j}] }
     )
         .then(teacher => {
             if(!teacher){
