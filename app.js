@@ -765,24 +765,24 @@ app.post('/api/justify/:token', (req, res, next) => {
     User.findOneAndUpdate(
         { token:token },
         { $set: { 'justificatif.$[teacher].justifie': 'False', 'justificatif.$[teacher].image': imagePath } },
-        { arrayFilters: [{ 'teacher.mailProf': professorEmail, 'teacher.id_j': id_j}] }
+        { arrayFilters: [{ 'teacher.id_j': id_j}] }
     )
         .then(student => {
             if (!student) {
                 console.log('user not found')
                 return res.status(404).json({items: [{ status: false, message: 'Student not found.' }]});
             }
-
+            console.log(student)
             User.findOneAndUpdate(
                 { mail: professorEmail },
                 { $set: { 'justificatif.$[student].justifie': 'True', 'justificatif.$[student].image': imagePath } },
-                { arrayFilters: [{ 'student.mailStudent': studentEmail ,'student.id_j':id_j}] }
+                { arrayFilters: [{ 'student.id_j':id_j}] }
             )
                 .then(teacher => {
                     if (!teacher) {
                         return res.status(404).json({items: [{ status: false, message: 'Teacher not found.' }]});
                     }
-
+                    console.log(teacher)
                     res.status(200).json({items: [{ status: true, message: 'Justification updated successfully.' }]});
                 })
                 .catch(error => res.status(500).json({ error }));
